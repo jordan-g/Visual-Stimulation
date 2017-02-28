@@ -4,14 +4,14 @@ clr.AddReference("System.Drawing")
 
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel
-from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar
+from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, AutoScaleMode
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
-from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
+from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment, GraphicsUnit
 
 # set fonts
-header_font = Font("Segoe UI", 9, FontStyle.Bold)
-body_font   = Font("Segoe UI", 9, FontStyle.Regular)
-error_font  = Font("Segoe UI", 9, FontStyle.Bold)
+header_font = Font("Segoe UI", 25, FontStyle.Bold, GraphicsUnit.Pixel)
+body_font   = Font("Segoe UI", 25, FontStyle.Regular, GraphicsUnit.Pixel)
+error_font  = Font("Segoe UI", 25, FontStyle.Bold, GraphicsUnit.Pixel)
 
 # set colors
 choice_panel_color = Color.WhiteSmoke
@@ -278,6 +278,9 @@ class StimDialog():
     Used when creating or editing a stimulus.
     '''
 
+    def __init__(self, param_window):
+    	self.param_window = param_window
+
     def ShowDialog(self, controller, stim_index):
         # set controller
         self.controller = controller
@@ -332,7 +335,7 @@ class StimDialog():
 
         # show the dialog
         self.dialog_window.ShowDialog()
-        
+
         # return success boolean
         return self.success
 
@@ -389,7 +392,7 @@ class StimDialog():
         for control in list_of_controls:
             control.Dispose()
         self.stim_param_panel.Controls.Clear()
-        
+
         # initialize stim param text controls dict
         self.stim_param_textboxes = {}
 
@@ -518,20 +521,20 @@ class StimDialog():
 
     def save_stim_params(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.param_window.stop_stim()
 
         # get contents of param textboxes
         self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
         name = self.name_textbox.Text
         duration = self.duration_textbox.Text
         type = self.stim_chooser.SelectedItem.ToString()
-        
+
         if self.are_valid_params(type, self.stim_param_textbox_values) and is_nonnegative_number(duration):
             # the params are valid
 
             # remove any invalid params text
             self.remove_invalid_params_text()
-            
+
             # create new parameters dicts
             new_stim_params = {key: float(value) for (key, value) in self.stim_param_textbox_values.items()}
 
@@ -634,7 +637,7 @@ class TTLDialog():
 
         # show the dialog
         self.dialog_window.ShowDialog()
-        
+
         # return success boolean
         return self.success
 
@@ -714,13 +717,13 @@ class TTLDialog():
     def save_TTL_params(self, sender, event):
         # get contents of param textboxes
         self.TTL_param_textbox_values = {key: value.Text for (key, value) in self.TTL_param_textboxes.items()}
-        
+
         if self.are_valid_params(self.TTL_param_textbox_values):
             # the params are valid
 
             # remove any invalid params text
             self.remove_invalid_params_text()
-            
+
             # create new parameters dicts
             new_TTL_params = {key: float(value) for (key, value) in self.TTL_param_textbox_values.items()}
 
@@ -729,6 +732,9 @@ class TTLDialog():
 
             # save TTL params
             self.controller.save_config_params()
+
+            # update arduino
+            self.controller.update_arduino(new_TTL_params)
 
             return True
         else:
@@ -784,13 +790,17 @@ class ParamWindow(Form):
         self.FormBorderStyle = FormBorderStyle.FixedSingle
         self.Top = 30
         self.Left = 30
-        self.Width = 500
-        self.Height = 800
+        self.Width = 1000
+        # self.Height = 1000
+        self.AutoSize = True
+        self.AutoScaleMode = AutoScaleMode.Dpi
+        self.AutoScaleDimensions = Size(96, 96)
+        self.Font = body_font
 
         # create dialogs
         self.experiment_name_dialog = ExperimentNameDialog()
         self.config_name_dialog = ConfigNameDialog()
-        self.stim_dialog = StimDialog()
+        self.stim_dialog = StimDialog(self)
         self.TTL_dialog = TTLDialog()
 
         # add & populate stim list panel
@@ -824,7 +834,7 @@ class ParamWindow(Form):
         self.exp_button_panel.Dock = DockStyle.Top
         self.exp_button_panel.FlowDirection = FlowDirection.LeftToRight
         self.exp_button_panel.WrapContents = False
-        self.exp_button_panel.Height = 40
+        # self.exp_button_panel.Height = 40
         self.exp_button_panel.Font = body_font
 
         # add new exp button
@@ -833,6 +843,7 @@ class ParamWindow(Form):
         new_exp_button.Text = "New"
         new_exp_button.Click += self.add_new_experiment
         new_exp_button.BackColor = button_color
+        new_exp_button.AutoSize = True
 
         # add remove exp button
         self.remove_exp_button = Button()
@@ -840,6 +851,7 @@ class ParamWindow(Form):
         self.remove_exp_button.Text = "Delete"
         self.remove_exp_button.Click += self.remove_experiment
         self.remove_exp_button.BackColor = button_color
+        self.remove_exp_button.AutoSize = True
 
         # disable remove exp button if there is only one experiment
         if len(self.controller.experiments['experiments_list']) == 1:
@@ -851,6 +863,7 @@ class ParamWindow(Form):
         rename_exp_button.Text = "Rename"
         rename_exp_button.Click += self.rename_experiment
         rename_exp_button.BackColor = button_color
+        rename_exp_button.AutoSize = True
 
         # create exp choice panel
         self.exp_choice_panel = FlowLayoutPanel()
@@ -860,7 +873,7 @@ class ParamWindow(Form):
         self.exp_choice_panel.Padding = Padding(10, 10, 0, 10)
         self.exp_choice_panel.FlowDirection = FlowDirection.TopDown
         self.exp_choice_panel.WrapContents = False
-        self.exp_choice_panel.Height = 70
+        # self.exp_choice_panel.Height = 70
         self.exp_choice_panel.Font = body_font
 
         # add exp choice label
@@ -876,7 +889,8 @@ class ParamWindow(Form):
         self.exp_chooser.Items.AddRange(Array[str](self.controller.experiments['experiments_list']))
         self.exp_chooser.SelectionChangeCommitted += self.on_exp_choice
         self.exp_chooser.Text = self.controller.experiments['current_experiment']
-        self.exp_chooser.Width = self.Width - 35
+        # self.exp_chooser.Width = self.Width - 35
+        self.exp_chooser.AutoSize = True
 
     def on_exp_choice(self, sender, event):
         # get new exp name
@@ -909,7 +923,7 @@ class ParamWindow(Form):
 
     def add_new_experiment(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # get new experiment name
         new_exp_name = self.experiment_name_dialog.ShowDialog(self.controller, "Add New Experiment", "New experiment name:", "New Experiment", None)
@@ -942,7 +956,7 @@ class ParamWindow(Form):
 
     def remove_experiment(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # remove experiment from experiments dict
         success = self.controller.remove_experiment(self.exp_chooser.SelectedItem.ToString())
@@ -973,7 +987,7 @@ class ParamWindow(Form):
 
         # get new experiment name
         new_exp_name = self.experiment_name_dialog.ShowDialog(self.controller, "Rename experiment","New experiment name:", old_exp_name, self.controller.experiments['experiments_list'].index(old_exp_name))
-        
+
         if new_exp_name != None:
             # rename the experiment
             success = self.controller.rename_experiment(old_exp_name, new_exp_name)
@@ -993,8 +1007,9 @@ class ParamWindow(Form):
         self.exp_param_panel.Padding = Padding(10)
         self.exp_param_panel.FlowDirection = FlowDirection.LeftToRight
         self.exp_param_panel.WrapContents = True
-        self.exp_param_panel.Height = 250
+        # self.exp_param_panel.Height = 250
         self.exp_param_panel.Font = body_font
+        self.exp_param_panel.AutoSize = True
 
     def populate_exp_param_panel(self):
         # initialize exp param textboxes, sliders & slider labels dicts
@@ -1010,7 +1025,7 @@ class ParamWindow(Form):
 
         # add exp param heading label
         # add_heading_label("Experiment Parameters", self.exp_param_panel)
-        
+
         # add exp params
         self.add_exp_param_to_window('screen_cm_width', 'Screen width (cm)')
         self.add_exp_param_to_window('screen_px_width', 'Screen width (px)')
@@ -1027,8 +1042,8 @@ class ParamWindow(Form):
         exp_param_subpanel.Padding = Padding(0)
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
-        exp_param_subpanel.Width = 150
-        exp_param_subpanel.Height = 60
+        # exp_param_subpanel.Width = 150
+        # exp_param_subpanel.Height = 60
         exp_param_subpanel.Font = body_font
 
         self.add_exp_param_slider_to_window('x_offset', 'Viewport x offset', 0, 100)
@@ -1043,8 +1058,8 @@ class ParamWindow(Form):
         exp_param_subpanel.Padding = Padding(0)
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
-        exp_param_subpanel.Width = 150
-        exp_param_subpanel.Height = 60
+        # exp_param_subpanel.Width = 150
+        # exp_param_subpanel.Height = 60
         exp_param_subpanel.Font = body_font
 
         # add param label
@@ -1054,8 +1069,11 @@ class ParamWindow(Form):
         self.exp_param_textboxes[name] = TextBox()
         self.exp_param_textboxes[name].Parent = exp_param_subpanel
         self.exp_param_textboxes[name].Text = str(self.controller.experiment_params[name])
-        self.exp_param_textboxes[name].Width = 140
-        self.exp_param_textboxes[name].BackColor = button_panel_color
+        self.exp_param_textboxes[name].Width = 340
+        # self.exp_param_textboxes[name].BackColor = button_panel_color
+        self.exp_param_textboxes[name].AutoSize = True
+        self.exp_param_textboxes[name].Font = body_font
+        self.exp_param_textboxes[name].Height = 50
 
     def add_exp_param_slider_to_window(self, name, label_text, min, max):
         # create exp param panel
@@ -1066,8 +1084,8 @@ class ParamWindow(Form):
         exp_param_subpanel.Padding = Padding(0)
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
-        exp_param_subpanel.Width = 150
-        exp_param_subpanel.Height = 60
+        # exp_param_subpanel.Width = 150
+        # exp_param_subpanel.Height = 60
         exp_param_subpanel.Font = body_font
 
         # add param label
@@ -1078,6 +1096,7 @@ class ParamWindow(Form):
         self.exp_param_slider_labels[name].Font = body_font
         self.exp_param_slider_labels[name].Margin = Padding(0, 5, 0, 0)
         self.exp_param_slider_labels[name].Name = label_text
+        self.exp_param_slider_labels[name].AutoSize = True
 
         # add param slider
         self.exp_param_sliders[name] = TrackBar()
@@ -1089,6 +1108,7 @@ class ParamWindow(Form):
         self.exp_param_sliders[name].Name = name
         self.exp_param_sliders[name].TickFrequency = 100
         self.exp_param_sliders[name].Scroll += self.on_slider_scroll
+        self.exp_param_sliders[name].AutoSize = True
 
     def on_slider_scroll(self, sender, event):
         self.exp_param_slider_labels[sender.Name].Text = self.exp_param_slider_labels[sender.Name].Name + ": " + str(sender.Value/100.0)
@@ -1108,7 +1128,7 @@ class ParamWindow(Form):
         self.config_choice_panel.Padding = Padding(10, 10, 0, 10)
         self.config_choice_panel.FlowDirection = FlowDirection.TopDown
         self.config_choice_panel.WrapContents = False
-        self.config_choice_panel.Height = 70
+        # self.config_choice_panel.Height = 70
         self.config_choice_panel.Font = body_font
 
     def populate_config_choice_panel(self):
@@ -1131,7 +1151,8 @@ class ParamWindow(Form):
         self.config_chooser.Items.AddRange(Array[str](self.controller.configs['configs_list']))
         self.config_chooser.SelectionChangeCommitted += self.on_config_choice
         self.config_chooser.Text = self.controller.configs['current_config']
-        self.config_chooser.Width = self.Width - 35
+        # self.config_chooser.Width = self.Width - 35
+        self.config_chooser.AutoSize = True
 
     def on_config_choice(self, sender, event):
         # get new config name
@@ -1156,7 +1177,7 @@ class ParamWindow(Form):
         self.config_button_panel.Dock = DockStyle.Top
         self.config_button_panel.FlowDirection = FlowDirection.LeftToRight
         self.config_button_panel.WrapContents = False
-        self.config_button_panel.Height = 40
+        # self.config_button_panel.Height = 40
         self.config_button_panel.Font = body_font
 
     def populate_config_button_panel(self):
@@ -1172,6 +1193,7 @@ class ParamWindow(Form):
         new_config_button.Text = "New"
         new_config_button.Click += self.add_new_config
         new_config_button.BackColor = button_color
+        new_config_button.AutoSize = True
 
         # add remove config button
         self.remove_config_button = Button()
@@ -1179,6 +1201,7 @@ class ParamWindow(Form):
         self.remove_config_button.Text = "Delete"
         self.remove_config_button.Click += self.remove_config
         self.remove_config_button.BackColor = button_color
+        self.remove_config_button.AutoSize = True
         if len(self.controller.configs['configs_list']) == 1:
             self.remove_config_button.Enabled = False
 
@@ -1188,10 +1211,11 @@ class ParamWindow(Form):
         rename_config_button.Text = "Rename"
         rename_config_button.Click += self.rename_config
         rename_config_button.BackColor = button_color
+        rename_config_button.AutoSize = True
 
     def add_new_config(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # get new config name
         new_config_name = self.config_name_dialog.ShowDialog(self.controller, "Add New Config", "New config name:", "New Config", None)
@@ -1222,7 +1246,7 @@ class ParamWindow(Form):
 
     def remove_config(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # remove config from configs dict
         success = self.controller.remove_config(self.config_chooser.SelectedItem.ToString())
@@ -1251,7 +1275,7 @@ class ParamWindow(Form):
 
         # get new config name
         new_config_name = self.config_name_dialog.ShowDialog(self.controller, "Rename Config","New config name:", old_config_name, self.controller.configs['configs_list'].index(old_config_name))
-        
+
         if new_config_name != None:
             # rename the config
             success = self.controller.rename_config(old_config_name, new_config_name)
@@ -1272,8 +1296,9 @@ class ParamWindow(Form):
         self.stim_list_panel.FlowDirection = FlowDirection.TopDown
         self.stim_list_panel.WrapContents = False
         self.stim_list_panel.AutoScroll = True
-        self.stim_list_panel.Width = self.Width
+        # self.stim_list_panel.Width = self.Width
         self.stim_list_panel.Font = body_font
+        self.stim_list_panel.AutoSize = True
 
     def populate_stim_list_panel(self):
         # empty stim list panel
@@ -1317,6 +1342,7 @@ class ParamWindow(Form):
         edit_button.Width = 60
         edit_button.Click += self.edit_stim
         edit_button.BackColor = button_color
+        edit_button.AutoSize = True
 
         # add edit button to list of edit buttons
         self.stim_list_edit_buttons.append(edit_button)
@@ -1328,6 +1354,7 @@ class ParamWindow(Form):
         delete_button.Width = 60
         delete_button.Click += self.remove_stim
         delete_button.BackColor = button_color
+        delete_button.AutoSize = True
 
         # add delete button to list of delete buttons
         self.stim_list_delete_buttons.append(delete_button)
@@ -1339,6 +1366,7 @@ class ParamWindow(Form):
         stim_name_label.Width = 120
         stim_name_label.Padding = Padding(0, 7, 0, 0)
         stim_name_label.AutoEllipsis = True
+        stim_name_label.AutoSize = True
 
         # add stim name label to list of stim name labels
         self.stim_list_name_labels.append(stim_name_label)
@@ -1349,6 +1377,7 @@ class ParamWindow(Form):
         stim_type_label.Text = stim_type
         stim_type_label.Width = 90
         stim_type_label.Padding = Padding(0, 7, 0, 0)
+        stim_type_label.AutoSize = True
 
         # add stim type label to list of stim type labels
         self.stim_list_type_labels.append(stim_type_label)
@@ -1359,6 +1388,7 @@ class ParamWindow(Form):
         duration_label.Text = str(self.controller.config_params['durations_list'][i]) + "s"
         duration_label.Width = 40
         duration_label.Padding = Padding(0, 7, 0, 0)
+        duration_label.AutoSize = True
 
         # add duration label to list of duration labels
         self.stim_list_duration_labels.append(duration_label)
@@ -1370,6 +1400,7 @@ class ParamWindow(Form):
         move_up_button.Width = 30
         move_up_button.Click += self.move_up_stim
         move_up_button.BackColor = button_color
+        move_up_button.AutoSize = True
 
         # add move down button
         move_down_button = Button()
@@ -1378,6 +1409,7 @@ class ParamWindow(Form):
         move_down_button.Width = 30
         move_down_button.Click += self.move_down_stim
         move_down_button.BackColor = button_color
+        move_down_button.AutoSize = True
 
         # add color accent
         if stim_type == "Looming Dot":
@@ -1395,7 +1427,7 @@ class ParamWindow(Form):
 
     def move_up_stim(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # get stim index
         stim_index = sender.Parent.Tag
@@ -1407,7 +1439,7 @@ class ParamWindow(Form):
             # rearrange tags
             self.stim_list_panel.Controls[stim_index-1].Tag -= 1
             self.stim_list_panel.Controls[stim_index].Tag += 1
-            
+
             # update lists of controls
             self.stim_list_subpanels[stim_index], self.stim_list_subpanels[stim_index-1] = self.stim_list_subpanels[stim_index-1], self.stim_list_subpanels[stim_index]
             self.stim_list_duration_labels[stim_index], self.stim_list_duration_labels[stim_index-1] = self.stim_list_duration_labels[stim_index-1], self.stim_list_duration_labels[stim_index]
@@ -1428,7 +1460,7 @@ class ParamWindow(Form):
 
     def move_down_stim(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # get stim index
         stim_index = sender.Parent.Tag
@@ -1440,7 +1472,7 @@ class ParamWindow(Form):
             # rearrange tags
             self.stim_list_panel.Controls[stim_index+1].Tag += 1
             self.stim_list_panel.Controls[stim_index].Tag -= 1
-            
+
             # update lists of controls
             self.stim_list_subpanels[stim_index], self.stim_list_subpanels[stim_index+1] = self.stim_list_subpanels[stim_index+1], self.stim_list_subpanels[stim_index]
             self.stim_list_duration_labels[stim_index], self.stim_list_duration_labels[stim_index+1] = self.stim_list_duration_labels[stim_index+1], self.stim_list_duration_labels[stim_index]
@@ -1461,7 +1493,7 @@ class ParamWindow(Form):
 
     def remove_stim(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # get stim index
         stim_index = sender.Parent.Tag
@@ -1491,7 +1523,7 @@ class ParamWindow(Form):
 
     def edit_stim(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # get stim index
         stim_index = sender.Parent.Tag
@@ -1528,7 +1560,7 @@ class ParamWindow(Form):
         self.save_button_panel.Dock = DockStyle.Bottom
         self.save_button_panel.Padding = Padding(10)
         self.save_button_panel.WrapContents = False
-        self.save_button_panel.Height = 50
+        # self.save_button_panel.Height = 50
         self.save_button_panel.Font = body_font
 
         # add new stim button
@@ -1537,6 +1569,7 @@ class ParamWindow(Form):
         self.add_stim_button.Text = "Add Stim"
         self.add_stim_button.Click += self.add_stim
         self.add_stim_button.BackColor = button_color
+        self.add_stim_button.AutoSize = True
 
         # add save button
         self.save_button = Button()
@@ -1544,6 +1577,7 @@ class ParamWindow(Form):
         self.save_button.Text = "Save"
         self.save_button.Click += self.save_experiment_params
         self.save_button.BackColor = button_color
+        self.save_button.AutoSize = True
 
         self.AcceptButton = self.save_button
 
@@ -1553,17 +1587,19 @@ class ParamWindow(Form):
         self.start_stop_button.Text = "Start"
         self.start_stop_button.Click += self.start_stop_stim
         self.start_stop_button.BackColor = button_color
+        self.start_stop_button.AutoSize = True
 
         # add edit TTL params button
-        self.start_stop_button = Button()
-        self.start_stop_button.Parent = self.save_button_panel
-        self.start_stop_button.Text = "TTL"
-        self.start_stop_button.Click += self.edit_TTL_params
-        self.start_stop_button.BackColor = button_color
+        self.TTL_button = Button()
+        self.TTL_button.Parent = self.save_button_panel
+        self.TTL_button.Text = "TTL"
+        self.TTL_button.Click += self.edit_TTL_params
+        self.TTL_button.BackColor = button_color
+        self.TTL_button.AutoSize = True
 
     def add_stim(self, sender, event):
         # stop any running stim
-        self.controller.running_stim = False
+        self.stop_stim()
 
         # show stim dialog
         success = self.stim_dialog.ShowDialog(self.controller, None)
@@ -1576,20 +1612,20 @@ class ParamWindow(Form):
         print("ParamWindow: Saving experiment params.")
 
         # stop any running stim
-        self.controller.running_stim = False
-        
+        self.stop_stim()
+
         # get contents of param textboxes
         self.exp_param_values         = {key: value.Text for (key, value) in self.exp_param_textboxes.items()}
         self.exp_param_slider_values  = {key: value.Value/100.0 for (key, value) in self.exp_param_sliders.items()}
 
         self.exp_param_values.update(self.exp_param_slider_values)
-        
+
         if self.are_valid_params(self.exp_param_values):
             # the params are valid
 
             # remove any invalid params text
             self.remove_invalid_params_text()
-            
+
             # create new parameters dicts
             new_exp_params = {key: float(value) for (key, value) in self.exp_param_values.items()}
 
@@ -1615,7 +1651,14 @@ class ParamWindow(Form):
             self.controller.start_stim()
             self.start_stop_button.Text = "Stop"
 
+    def stop_stim(self):
+       	self.controller.running_stim = False
+       	self.start_stop_button.Text = "Start"
+
     def edit_TTL_params(self, sender, event):
+    	# stop any running stim
+        self.stop_stim()
+
         # show TTL dialog
         success = self.TTL_dialog.ShowDialog(self.controller)
 

@@ -1,7 +1,7 @@
 from __future__ import division
 
 import clr
-clr.AddReferenceToFile("OpenTK.dll")
+clr.AddReferenceToFileAndPath("OpenTK.dll")
 clr.AddReference("System.Drawing")
 
 import math
@@ -45,7 +45,7 @@ class StimWindow(GameWindow):
 
         return GameWindow.__new__(self, display_width,
                                         display_height,
-                                        GraphicsMode(16, 24, 0, 4), #  bits/pixel, depth bits, stencil bits, FSAA samples
+                                        GraphicsMode(4, 4, 0, 0), #  bits/pixel, depth bits, stencil bits, FSAA samples
                                         window_name,
                                         window_flag,
                                         display)
@@ -182,6 +182,7 @@ class StimWindow(GameWindow):
                             # run stim's end func
                             if self.stim != None:
                                 self.stim.end_func()
+                                self.OnRenderFrame(None)
 
                             if self.stim_index != self.n_stim - 1:
                                 # we haven't reached the end of the sequence; switch to the next stim
@@ -279,7 +280,8 @@ class LoomingDotStim():
             self.radius = self.stim_window.px_width*4
 
     def end_func(self):
-        pass
+        print("Running end func.")
+        self.radius = self.stim_window.px_width*8
 
     def render_func(self):
         GL.LoadIdentity()
@@ -300,7 +302,7 @@ class LoomingDotStim():
         GL.Color3(1.0 - self.contrast, 1.0 - self.contrast, 1.0 - self.contrast)
 
         # draw the dot
-        self.draw_circle(30, self.radius)
+        self.draw_circle(60, self.radius)
 
 class MovingDotStim():
     def __init__(self, stim_window):
@@ -381,7 +383,7 @@ class MovingDotStim():
         if self.t <= self.t_last_movement + 1000:
             self.t_last_movement = self.t
 
-            self.v_x_noise = pnoise1(self.t_slow_x/500.0 + self.base_v_x, self.octaves, persistence=0.01, repeat=int(self.duration))*2.0
+            self.v_x_noise = pnoise1(self.t_slow_x/500.0 + self.base_v_x, self.octaves, persistence=1, repeat=int(self.duration))*2.0
             self.v_y_noise = pnoise1(self.t_slow_y/100.0 + self.base_v_y, self.octaves, persistence=0.01, repeat=int(self.duration))*2.0
 
             # print(self.v_x_noise - v_x_noise_old)
