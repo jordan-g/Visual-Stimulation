@@ -1,15 +1,11 @@
 from param_window import ParamWindow
-from stim_window import StimWindow
+from stim_window_MMtest import StimWindow
 
 import threading
 import os
 import shutil
 import datetime
 import json
-import arduino_generator
-from subprocess import call
-
-# test
 
 class StimController():
     def __init__(self):
@@ -121,7 +117,7 @@ class StimController():
 
         # set path to experiment params file
         self.experiment_params_path = os.path.join(self.current_experiment_folder, self.experiment_params_file)
-
+       
         try:
             # load experiment params
             with open(self.experiment_params_path, "r") as input_file:
@@ -187,7 +183,7 @@ class StimController():
 
         # set path to config params file
         self.config_params_path = os.path.join(self.current_config_folder, self.config_params_file)
-
+       
         try:
             # load config params
             with open(self.config_params_path, "r") as input_file:
@@ -212,10 +208,11 @@ class StimController():
             self.config_params = {'stim_list': ['Stim 1'],
                                  'durations_list': [10],
                                  'types_list': ['Looming Dot'],
-                                 'parameters_list': [{'init_x_pos': 0,
-                                                      'init_y_pos': 0,
-                                                      'l_v': 150,
-                                                      'contrast': 1.0
+                                 'parameters_list': [{'looming_dot_init_x_pos': 0,
+                                                      'looming_dot_init_y_pos': 0,
+                                                      'l_v': 150,                   ## edited from 150 to 20
+                                                      'looming_dot_brightness': 1.0,
+                                                      'background_brightness': 0
                                                      }],
                                  'TTL_params': {'delay': 10,      # ms
                                                 'frequency': 50,  # Hz
@@ -431,12 +428,6 @@ class StimController():
     def change_param(self, param_dimension, change_in_param):
         self.stim_window.change_param(param_dimension, change_in_param)
 
-    def update_arduino(self, TTL_params):
-        print("Controller: Uploading new TTL params to Arduino.")
-        arduino_generator.generate_arduino_sketch(TTL_params)
-
-        call('"C:\\Program Files (x86)\\Arduino\\arduino.exe" --upload arduino_pulse\\arduino_pulse.ino', shell=True)
-
     def close_windows(self):
         print("Controller: Closing windows.")
 
@@ -451,6 +442,3 @@ class StimController():
         self.stim_thread.join()
 
         print("Controller: Closed all threads.")
-
-if __name__ == "__main__":
-    c = StimController()
