@@ -2,6 +2,9 @@ import clr
 clr.AddReference("System.Windows.Forms")
 clr.AddReference("System.Drawing")
 
+# Nick added a comment to the file.
+# Another comment.
+
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel
 from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, AutoScaleMode
