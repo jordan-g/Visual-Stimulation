@@ -567,7 +567,7 @@ class StimDialog():
 
 	def save_stim_params(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# get contents of param textboxes
 		self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
@@ -971,7 +971,7 @@ class ParamWindow(Form):
 
 	def add_new_experiment(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# get new experiment name
 		new_exp_name = self.experiment_name_dialog.ShowDialog(self.controller, "Add New Experiment", "New experiment name:", "New Experiment", None)
@@ -1004,7 +1004,7 @@ class ParamWindow(Form):
 
 	def remove_experiment(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# remove experiment from experiments dict
 		success = self.controller.remove_experiment(self.exp_chooser.SelectedItem.ToString())
@@ -1253,7 +1253,7 @@ class ParamWindow(Form):
 
 	def add_new_config(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# get new config name
 		new_config_name = self.config_name_dialog.ShowDialog(self.controller, "Add New Config", "New config name:", "New Config", None)
@@ -1284,7 +1284,7 @@ class ParamWindow(Form):
 
 	def remove_config(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# remove config from configs dict
 		success = self.controller.remove_config(self.config_chooser.SelectedItem.ToString())
@@ -1457,7 +1457,7 @@ class ParamWindow(Form):
 
 	def move_up_stim(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# get stim index
 		stim_index = sender.Parent.Tag
@@ -1490,7 +1490,7 @@ class ParamWindow(Form):
 
 	def move_down_stim(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# get stim index
 		stim_index = sender.Parent.Tag
@@ -1523,7 +1523,7 @@ class ParamWindow(Form):
 
 	def remove_stim(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# get stim index
 		stim_index = sender.Parent.Tag
@@ -1553,7 +1553,7 @@ class ParamWindow(Form):
 
 	def edit_stim(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# get stim index
 		stim_index = sender.Parent.Tag
@@ -1625,7 +1625,7 @@ class ParamWindow(Form):
 
 	def add_stim(self, sender, event):
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 
 		# show stim dialog
 		success = self.stim_dialog.ShowDialog(self.controller, None)
@@ -1638,7 +1638,7 @@ class ParamWindow(Form):
 		print("ParamWindow: Saving experiment params.")
 
 		# stop any running stim
-		self.controller.running_stim = False
+		self.controller.stop_stim()
 		
 		# get contents of param textboxes
 		self.exp_param_values         = {key: value.Text for (key, value) in self.exp_param_textboxes.items()}
@@ -1671,11 +1671,9 @@ class ParamWindow(Form):
 
 	def start_stop_stim(self, sender, event):
 		if self.controller.running_stim:
-			self.controller.running_stim = False
-			self.start_stop_button.Text = "Start"
+			self.controller.stop_stim()
 		else:
 			self.controller.start_stim()
-			self.start_stop_button.Text = "Stop"
 
 	def edit_TTL_params(self, sender, event):
 		# show TTL dialog

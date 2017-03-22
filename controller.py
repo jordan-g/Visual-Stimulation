@@ -266,6 +266,14 @@ class StimController():
 
         self.param_window.start_stop_button.Text = "Stop"
 
+    def stop_stim(self):
+        print("Controller: Stopping stim.")
+
+        self.begin_stim = False
+        self.running_stim = False
+
+        self.param_window.start_stop_button.Text = "Start"
+
     def change_experiment(self, experiment_name):
         print("Controller: Changing experiment to {}.".format(experiment_name))
 
