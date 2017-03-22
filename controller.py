@@ -1,5 +1,5 @@
 from param_window import ParamWindow
-from stim_window_MMtest import StimWindow
+from stim_window import StimWindow
 
 import threading
 import os

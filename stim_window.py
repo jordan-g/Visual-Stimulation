@@ -1,7 +1,7 @@
 from __future__ import division
 
 import clr
-clr.AddReferenceToFileAndPath("OpenTK.dll")
+clr.AddReferenceToFile("OpenTK.dll")
 clr.AddReference("System.Drawing")
 
 import math
@@ -45,7 +45,7 @@ class StimWindow(GameWindow):
 
         return GameWindow.__new__(self, display_width,
                                         display_height,
-                                        GraphicsMode(4, 4, 0, 0), #  bits/pixel, depth bits, stencil bits, FSAA samples
+                                        GraphicsMode(16, 24, 0, 4), #  bits/pixel, depth bits, stencil bits, FSAA samples
                                         window_name,
                                         window_flag,
                                         display)
@@ -60,7 +60,7 @@ class StimWindow(GameWindow):
         self.TargetRenderFrequency = 60
 
         # set window's background color
-        GL.ClearColor(0.5, 0.5, 0.5, 1.0)
+        GL.ClearColor(0, 0, 0, 0) 
 
         # initialize time variable
         self.t = 0
@@ -105,6 +105,8 @@ class StimWindow(GameWindow):
 
         self.get_stim_params(self.stim_index)
 
+        print(self.params)
+
         print("StimWindow: Switching to {} stim.".format(self.stim_type))
 
         self.create_stim()
@@ -128,6 +130,8 @@ class StimWindow(GameWindow):
                 self.stim = BlackFlashStim(self)
             elif self.stim_type == "White Flash":
                 self.stim = WhiteFlashStim(self)
+            elif self.stim_type == "Combined Dots":
+                self.stim = CombinedDotStim(self)
         else:
             self.stim = None
 
@@ -182,7 +186,6 @@ class StimWindow(GameWindow):
                             # run stim's end func
                             if self.stim != None:
                                 self.stim.end_func()
-                                self.OnRenderFrame(None)
 
                             if self.stim_index != self.n_stim - 1:
                                 # we haven't reached the end of the sequence; switch to the next stim
@@ -192,7 +195,7 @@ class StimWindow(GameWindow):
                                 self.started = False
                             else:
                                 # we've reached the end; stop the stim sequence
-                                self.controller.running_stim = False
+                                self.controller.param_window.start_stop_stim(None, None)
                 else:
                     # stim sequence is not running; reset stim if necessary
                     if self.stim_index != 0:
@@ -219,9 +222,62 @@ class StimWindow(GameWindow):
                     # swap buffers
                     self.SwapBuffers()
 
+class LoomingDot():
+    def __init__(self, stim):
+        self.stim = stim
+
+    def update_params(self, distance, resolution, params, window_width, window_height): 
+        self.resolution = resolution # px/cm
+        self.distance   = distance # cm
+        self.window_width = window_width
+        self.window_height = window_height
+        self.max_radius = self.window_width*4 ## Why does this have a self. is it because it references line 228? does the .self mean it looks in this class?
+
+        self.x        = math.tan(math.radians(params['looming_dot_init_x_pos']))*self.distance*self.resolution/(self.window_width/2)
+        self.y        = math.tan(math.radians(params['looming_dot_init_y_pos']))*self.distance*self.resolution/(self.window_height/2)
+        self.l_v      = params['l_v']
+        self.brightness = params['looming_dot_brightness']
+
+        self.A = self.distance*self.resolution*-self.l_v ## What is self.A?
+
+        self.radius_init = 1 # initial radius
+        self.radius = self.radius_init
+
+    def update_func(self, time):
+        if time < 0:
+            # update radius
+            self.radius = self.A/time
+        else:
+            # dot has reached the screen; make sure it covers the whole viewport
+            self.radius = self.max_radius
+
+    def draw_circle(self, n_vertices, radius):
+        radius_x = radius/(self.window_width/2.0)
+        radius_y = radius/(self.window_height/2.0)
+
+        GL.Begin(BeginMode.Polygon)
+        for angle in linspace(0, 2*math.pi, n_vertices):
+            GL.Vertex2(radius_x*math.sin(angle), radius_y*math.cos(angle))
+        GL.End()
+
+    def render_func(self):
+        GL.PushMatrix()
+
+        # set dot position
+        GL.Translate(self.x, self.y, 0)
+
+        # set dot color
+        GL.Color3(self.brightness, self.brightness, self.brightness)
+
+        # draw the dot
+        self.draw_circle(30, self.radius)
+
+        GL.PopMatrix()
+
 class LoomingDotStim():
     def __init__(self, stim_window):
         self.stim_window = stim_window
+        self.looming_dot = LoomingDot(self)
 
         # get parameters
         distance = self.stim_window.distance
@@ -235,78 +291,138 @@ class LoomingDotStim():
     def update_params(self, distance, resolution, duration, params):
         print("LoomingDotStim: Updating parameters.")
 
-        self.resolution = resolution # px/cm
-        self.distance   = distance # cm
         self.duration   = duration*1000.0 # ms
 
-        self.x        = math.tan(math.radians(params['init_x_pos']))*self.distance*self.resolution/(self.stim_window.px_width/2)
-        self.y        = math.tan(math.radians(params['init_y_pos']))*self.distance*self.resolution/(self.stim_window.px_height/2)
-        self.l_v      = params['l_v']
-        self.contrast = params['contrast']
-
-        self.A = self.distance*self.resolution*-self.l_v
-
-        self.radius_init = 0.5 # initial radius
-        self.radius = self.radius_init
+        self.looming_dot.update_params(distance, resolution, params, self.stim_window.px_width, self.stim_window.px_height)
 
         # if a duration of 0 is given, calculate required duration for approaching dot to reach the screen
         if self.duration == 0:
-            self.duration = -self.A/self.radius # ms
+            self.duration = -self.looming_dot.A/self.looming_dot.radius # ms
+
+        print(self.duration)
 
         self.t_init = -self.duration
         self.t = self.t_init
 
-    def draw_circle(self, n_vertices, radius):
-        radius_x = radius/(self.stim_window.px_width/2.0)
-        radius_y = radius/(self.stim_window.px_height/2.0)
-
-        GL.Begin(BeginMode.Polygon)
-        for angle in linspace(0, 2*math.pi, n_vertices):
-            GL.Vertex2(radius_x*math.sin(angle), radius_y*math.cos(angle))
-        GL.End()
+        self.background_brightness = params['background_brightness']
 
     def start_func(self):
         pass
 
-    def update_func(self, elapsed_time):
+    def update_func(self, elapsed_time):    ## Keeps track of time for LoomingDot
         # update t
         self.t += elapsed_time
 
-        if self.t < 0:
-            # update radius
-            self.radius = self.A/self.t
-        else:
-            # dot has reached the screen; make sure it covers the whole viewport
-            self.radius = self.stim_window.px_width*4
+        self.looming_dot.update_func(self.t)
 
     def end_func(self):
-        print("Running end func.")
-        self.radius = self.stim_window.px_width*8
+        pass
 
     def render_func(self):
         GL.LoadIdentity()
-
+        
         # draw in the viewport background
         GL.Begin(BeginMode.Quads)
-        GL.Color4(Color.White)
+        GL.Color3(self.background_brightness, self.background_brightness, self.background_brightness) 
         GL.Vertex2(-1, -1)
         GL.Vertex2(-1, 1)
         GL.Vertex2(1, 1)
         GL.Vertex2(1, -1)
         GL.End()
 
+        self.looming_dot.render_func()
+
+class MovingDot():     
+    def __init__(self,stim):
+        self.stim = stim
+
+    def update_params(self, distance, resolution, params, window_width, window_height): 
+        self.resolution = resolution # px/cm   ## What does this and self.distance do?
+        self.distance = distance # cm
+        self.window_width = window_width
+        self.window_height = window_height
+
+        self.radius   = params['radius'] # px
+        self.x_init   = math.tan(math.radians(params['moving_dot_init_x_pos']))*self.distance*self.resolution/(self.window_width/2) # rel units
+        self.y_init   = math.tan(math.radians(params['moving_dot_init_y_pos']))*self.distance*self.resolution/(self.window_height/2) # rel units
+        self.x = self.x_init
+        self.y = self.y_init
+
+       # self.v_x_init   = math.tan(math.radians(params['v_x']))*self.distance*self.resolution/1000.0 # px/ms
+       # self.v_x        = self.v_x_init
+       # self.v_y_init   = math.tan(math.radians(params['v_y']))*self.distance*self.resolution/1000.0 # px/ms
+       # self.v_y        = self.v_y_init
+       # self.max_v_init = max(abs(self.v_x_init), abs(self.v_y_init))
+
+       # self.base_v_x = random.uniform(0, 10000)
+       # self.base_v_y = random.uniform(10000, 20000)
+       # self.octaves = 16
+
+        self.v_x = math.tan(math.radians(params['v_x']))*self.distance*self.resolution/((self.window_width/2)*1000.0)
+        self.v_y = math.tan(math.radians(params['v_y']))*self.distance*self.resolution/((self.window_height/2)*1000.0)
+
+        print(self.v_x, self.v_y)
+
+        self.brightness = params['moving_dot_brightness']
+
+        self.radius_x = self.radius/(self.window_width/2.0)
+        self.radius_y = self.radius/(self.window_height/2.0)
+
+    def update_func(self, elapsed_time):
+##        if time == self.t_last_movement:
+##            self.time_to_movement = math.random.expovariate(1/0.01)
+##
+##        if time <= self.t_last_movement + 1000:       ## would elif be more appropriate here? could else be used to catch exceptions
+##            self.t_last_movement = time
+##
+##            self.v_x_noise = pnoise1(self.t_slow_x/500.0 + self.base_v_x, self.octaves, persistence=0.01, repeat=int(self.duration))*2.0
+##            self.v_y_noise = pnoise1(self.t_slow_y/100.0 + self.base_v_y, self.octaves, persistence=0.01, repeat=int(self.duration))*2.0
+##
+##            self.t_slow_x += 2
+##            self.t_slow_y += 2
+##
+##            v_x = (0.1 + 0.9*self.v_x_noise)*self.v_x
+##            v_y = (0.5 + 0.5*self.v_y_noise)*self.v_y + 0.0005*self.v_y_noise
+##
+##      # update position
+##            self.x += self.v_x*elapsed_time
+##            self.y += self.v_y*elapsed_time
+
+        self.x += self.v_x*elapsed_time
+        self.y += self.v_y*elapsed_time
+        
+    def draw_circle(self, n_vertices):
+        GL.Begin(BeginMode.Polygon)
+        for angle in linspace(0, 2*math.pi, n_vertices):
+            GL.Vertex2(self.radius_x*math.sin(angle), self.radius_y*math.cos(angle))
+        GL.End()
+
+    def change_v_x(self, change_in_v_x):
+        self.v_x = change_in_v_x*self.max_v_init
+
+    def change_v_y(self, change_in_v_y):
+        self.v_y += change_in_v_y*self.max_v_init
+
+    def render_func(self):
+        GL.PushMatrix()
+
         # set dot position
         GL.Translate(self.x, self.y, 0)
 
         # set dot color
-        GL.Color3(1.0 - self.contrast, 1.0 - self.contrast, 1.0 - self.contrast)
+        GL.Color3(self.brightness, self.brightness, self.brightness)
 
         # draw the dot
-        self.draw_circle(60, self.radius)
+        self.draw_circle(30)
+
+        GL.PopMatrix()
+
 
 class MovingDotStim():
     def __init__(self, stim_window):
         self.stim_window = stim_window
+
+        self.moving_dot = MovingDot(self)
 
         # get parameters
         distance = self.stim_window.distance
@@ -320,55 +436,27 @@ class MovingDotStim():
     def update_params(self, distance, resolution, duration, params):
         print("MovingDotStim: Updating parameters.")
 
-        self.resolution = resolution # px/cm
-        self.distance = distance # cm
         self.duration = duration*1000.0 # ms
 
-        self.radius   = params['radius'] # px
-        self.x_init   = math.tan(math.radians(params['init_x_pos']))*self.distance*self.resolution/(self.stim_window.px_width/2) # rel units
-        self.y_init   = math.tan(math.radians(params['init_y_pos']))*self.distance*self.resolution/(self.stim_window.px_width/2) # rel units
-        self.x = self.x_init
-        self.y = self.y_init
+        self.moving_dot.update_params(distance, resolution, params, self.stim_window.px_width, self.stim_window.px_height)
 
-        self.v_x_init   = math.tan(math.radians(params['v_x']))*self.distance*self.resolution/1000.0 # px/ms
-        self.v_x        = self.v_x_init
-        self.v_y_init   = math.tan(math.radians(params['v_y']))*self.distance*self.resolution/1000.0 # px/ms
-        self.v_y        = self.v_y_init
-        self.max_v_init = max(abs(self.v_x_init), abs(self.v_y_init))
-
-        self.base_v_x = random.uniform(0, 10000)
-        self.base_v_y = random.uniform(10000, 20000)
-
-        self.octaves = 16
-
-        self.contrast = params['contrast']
-
+        ## if a duration of 0 is given, calculates duration for moving dot to move across screen
         if self.duration == 0:
-            self.duration = (1.2 - self.x_init)/self.v_x_init
-
+            if self.moving_dot.v_x != 0:
+                if self.moving_dot.v_x > 0:
+                    self.duration = (1.2 - self.moving_dot.x_init)/self.moving_dot.v_x
+                else:
+                    self.duration = (-1.2 - self.moving_dot.x_init)/self.moving_dot.v_x
+            else:
+                if self.moving_dot.v_y > 0:
+                    self.duration = (1.2 - self.moving_dot.y_init)/self.moving_dot.v_y
+                else:
+                    self.duration = (-1.2 - self.moving_dot.y_init)/self.moving_dot.v_y
+        
         self.t_init = -self.duration # ms
         self.t = self.t_init
 
-        self.t_last_movement = self.t_init
-        self.time_to_movement = 0
-
-        self.t_slow_x = 0
-        self.t_slow_y = 0
-
-        self.radius_x = self.radius/(self.stim_window.px_width/2.0)
-        self.radius_y = self.radius/(self.stim_window.px_height/2.0)
-
-    def draw_circle(self, n_vertices):
-        GL.Begin(BeginMode.Polygon)
-        for angle in linspace(0, 2*math.pi, n_vertices):
-            GL.Vertex2(self.radius_x*math.sin(angle), self.radius_y*math.cos(angle))
-        GL.End()
-
-    def change_v_x(self, change_in_v_x):
-        self.v_x = change_in_v_x*self.max_v_init
-
-    def change_v_y(self, change_in_v_y):
-        self.v_y += change_in_v_y*self.max_v_init
+        self.background_brightness = params['background_brightness']
 
     def start_func(self):
         pass
@@ -377,32 +465,7 @@ class MovingDotStim():
         # update t
         self.t += elapsed_time
 
-        if self.t == self.t_last_movement:
-            self.time_to_movement = math.random.expovariate(1/0.01)
-
-        if self.t <= self.t_last_movement + 1000:
-            self.t_last_movement = self.t
-
-            self.v_x_noise = pnoise1(self.t_slow_x/500.0 + self.base_v_x, self.octaves, persistence=1, repeat=int(self.duration))*2.0
-            self.v_y_noise = pnoise1(self.t_slow_y/100.0 + self.base_v_y, self.octaves, persistence=0.01, repeat=int(self.duration))*2.0
-
-            # print(self.v_x_noise - v_x_noise_old)
-
-            self.t_slow_x += 2
-            self.t_slow_y += 2
-
-        # v_x = self.v_x + a_x_noise*elapsed_time
-        # v_y = self.v_y + a_y_noise*elapsed_time
-
-
-        # print(v_x, self.v_x)
-
-            v_x = (0.1 + 0.9*self.v_x_noise)*self.v_x
-            v_y = (0.5 + 0.5*self.v_y_noise)*self.v_y + 0.0005*self.v_y_noise
-
-        # update position
-            self.x += v_x*elapsed_time
-            self.y += v_y*elapsed_time
+        self.moving_dot.update_func(elapsed_time)
 
     def end_func(self):
         pass
@@ -412,21 +475,86 @@ class MovingDotStim():
 
         # draw in the viewport background
         GL.Begin(BeginMode.Quads)
-        GL.Color4(Color.Black)
+        GL.Color3(self.background_brightness, self.background_brightness, self.background_brightness)   
         GL.Vertex2(-1, -1)
         GL.Vertex2(-1, 1)
         GL.Vertex2(1, 1)
         GL.Vertex2(1, -1)
         GL.End()
 
-        # set dot position
-        GL.Translate(self.x, self.y, 0)
+        self.moving_dot.render_func()
 
-        # set dot color
-        GL.Color3(0.0 + self.contrast, 0.0 + self.contrast, 0.0 + self.contrast)
+class CombinedDotStim():
+    def __init__(self, stim_window):
+        self.stim_window = stim_window
 
-        # draw the dot
-        self.draw_circle(30)
+        self.moving_dot = MovingDot(self)
+        self.looming_dot = LoomingDot(self)
+
+        # get parameters    ## I only need one get params because there is only one window
+        distance = self.stim_window.distance
+        resolution = self.stim_window.resolution
+        duration = self.stim_window.duration
+        params = self.stim_window.params
+
+        # update parameters
+        self.update_params(distance, resolution, duration, params)
+        
+    def update_params(self, distance, resolution, duration, params):
+        print("CombinedDotStim: Updating parameters.")
+
+        self.duration = duration*1000.0 # ms
+
+        ## if a duration of 0 is given, calculates duration for moving dot to move across screen
+        if self.duration == 0:
+            if self.moving_dot.v_x != 0:
+                if self.moving_dot.v_x > 0:
+                    self.duration = (1.2 - self.moving_dot.x_init)/self.moving_dot.v_x
+                else:
+                    self.duration = (-1.2 - self.moving_dot.x_init)/self.moving_dot.v_x
+            else:
+                if self.moving_dot.v_y > 0:
+                    self.duration = (1.2 - self.moving_dot.y_init)/self.moving_dot.v_y
+                else:
+                    self.duration = (-1.2 - self.moving_dot.y_init)/self.moving_dot.v_y
+
+        self.background_brightness = params['background_brightness']
+
+        print(self.duration)
+
+        self.moving_dot.update_params(distance, resolution, params, self.stim_window.px_width, self.stim_window.px_height)
+        self.looming_dot.update_params(distance, resolution, params, self.stim_window.px_width, self.stim_window.px_height)
+        
+        self.t_init = -self.duration # ms
+        self.t = self.t_init
+
+    def start_func(self):
+        pass
+
+    def update_func(self, elapsed_time):
+        # update t
+        self.t += elapsed_time
+
+        self.looming_dot.update_func(self.t)
+        self.moving_dot.update_func(elapsed_time)
+
+    def end_func(self):
+        pass
+
+    def render_func(self):
+        GL.LoadIdentity()
+
+        # draw in the viewport background
+        GL.Begin(BeginMode.Quads)
+        GL.Color3(self.background_brightness, self.background_brightness, self.background_brightness)
+        GL.Vertex2(-1, -1)
+        GL.Vertex2(-1, 1)
+        GL.Vertex2(1, 1)
+        GL.Vertex2(1, -1)
+        GL.End()
+
+        self.looming_dot.render_func()
+        self.moving_dot.render_func()
 
 class GratingStim():
     def __init__(self, stim_window):
