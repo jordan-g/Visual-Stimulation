@@ -288,6 +288,12 @@ class StimDialog():
 		# initialize invalid params label
 		self.invalid_params_label = None
 
+		# create a dictionary to save stim parameters for different stim types
+		# as the user changes parameters & types of stimuli in this dialog.
+		# If the user switches from looming dot to moving dot and back,
+		# the previous settings for the looming dot can be restored.
+		self.saved_stim_parameters = {}
+
 		if stim_index != None:
 			# we are editing an existing stim; get the stim params
 			self.i = stim_index
@@ -295,6 +301,7 @@ class StimDialog():
 			self.stim_type = self.controller.config_params['types_list'][self.i]
 			self.stim_duration = self.controller.config_params['durations_list'][self.i]
 			self.stim_parameters = self.controller.config_params['parameters_list'][self.i]
+
 		else:
 			# we are creating a new stim; make new stim params
 			self.i = len(self.controller.config_params['stim_list'])
@@ -309,6 +316,9 @@ class StimDialog():
 
 			# add the stim to the config params
 			self.controller.add_stim(self.stim_name, self.stim_type, self.stim_duration, self.stim_parameters)
+
+		# save a copy of the initial stim params so we can restore them later
+		self.saved_stim_parameters[self.stim_type] = self.controller.config_params['parameters_list'][self.i]
 
 		# create the form
 		self.dialog_window = Form()
@@ -466,6 +476,10 @@ class StimDialog():
 		self.stim_param_textboxes[name].BackColor = textbox_color
 
 	def on_stim_choice(self, sender, event):
+		# save a copy of the current stim params for the currently selected stim type
+		self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
+		self.saved_stim_parameters[self.stim_type] = {key: float(value) for (key, value) in self.stim_param_textbox_values.items()}
+
 		# get selected stim type
 		new_stim_type = self.stim_chooser.SelectedItem.ToString()
 
@@ -473,55 +487,59 @@ class StimDialog():
 			# update stim type
 			self.stim_type = new_stim_type
 
-			# create stim parameters
-			if self.stim_type == "Looming Dot":
-				self.stim_parameters = {'looming_dot_init_x_pos': 0.0,
-											   'looming_dot_init_y_pos': 0.0,
-											   'l_v': 20,				## changed from 150 to 20
-											   'looming_dot_brightness': 1.0,
-											   'background_brightness': 0}
-			elif self.stim_type == "Moving Dot":
-				self.stim_parameters = {'radius': 10.0,
-											   'moving_dot_init_x_pos': 0.0,
-											   'moving_dot_init_y_pos': 0.0,
-											   'v_x': 1.0,
-											   'v_y': 0.0,
-											   'moving_dot_brightness': 1.0,
-											   'background_brightness': 0}
-			elif self.stim_type == "Combined Dots":     ##Should give initial params?
-				self.stim_parameters = {'radius': 10.0,     ##moving dot from here
-											   'moving_dot_init_x_pos': 0.0,
-											   'looming_dot_init_x_pos': 0.0,
-											   'moving_dot_init_y_pos': 0.0,
-											   'looming_dot_init_y_pos': 0.0,
-											   'v_x': 0.01,
-											   'v_y': 0.0,
-											   'l_v': 20,
-											   'moving_dot_brightness': 1.0,
-											   'looming_dot_brightness': 1.0,
-											   'background_brightness': 0} ## moving dot to here
-			# elif self.stim_type == "Multiple Moving Dots":     ##Should give initial params?
-			# 	self.stim_parameters = {'dot_params': [{'radius': 10.0,     ##moving dot from here
-			# 								            'moving_dot_init_x_pos': 0.0,
-			# 								            'moving_dot_init_y_pos': 0.0,
-			# 								            'v_x': 0.01,
-			# 								            'v_y': 0.0,
-			# 								            'l_v': 150,
-			# 								            'moving_dot_brightness': 1.0},
-			# 								            {'radius': 10.0,     ##moving dot from here
-			# 								            'moving_dot_init_x_pos': 0.0,
-			# 								            'moving_dot_init_y_pos': 0.0,
-			# 								            'v_x': 0.01,
-			# 								            'v_y': 0.0,
-			# 								            'l_v': 150,
-			# 								            'moving_dot_brightness': 1.0}]} ## moving dot to here
-			elif self.stim_type == "Grating":
-				self.stim_parameters = {'frequency': 1,
-											   'init_phase': 0.0,
-											   'velocity': 0.02,
-											   'contrast': 1.0}
-			elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
-				self.stim_parameters = {}
+			if new_stim_type in self.saved_stim_parameters:
+				# we have previously set parameters for this stim type; restore these
+				self.stim_parameters = self.saved_stim_parameters[self.stim_type]
+			else:
+				# create new stim parameters
+				if self.stim_type == "Looming Dot":
+					self.stim_parameters = {'looming_dot_init_x_pos': 0.0,
+												   'looming_dot_init_y_pos': 0.0,
+												   'l_v': 20,				## changed from 150 to 20
+												   'looming_dot_brightness': 1.0,
+												   'background_brightness': 0}
+				elif self.stim_type == "Moving Dot":
+					self.stim_parameters = {'radius': 10.0,
+												   'moving_dot_init_x_pos': 0.0,
+												   'moving_dot_init_y_pos': 0.0,
+												   'v_x': 1.0,
+												   'v_y': 0.0,
+												   'moving_dot_brightness': 1.0,
+												   'background_brightness': 0}
+				elif self.stim_type == "Combined Dots":     ##Should give initial params?
+					self.stim_parameters = {'radius': 10.0,     ##moving dot from here
+												   'moving_dot_init_x_pos': 0.0,
+												   'looming_dot_init_x_pos': 0.0,
+												   'moving_dot_init_y_pos': 0.0,
+												   'looming_dot_init_y_pos': 0.0,
+												   'v_x': 0.01,
+												   'v_y': 0.0,
+												   'l_v': 20,
+												   'moving_dot_brightness': 1.0,
+												   'looming_dot_brightness': 1.0,
+												   'background_brightness': 0} ## moving dot to here
+				# elif self.stim_type == "Multiple Moving Dots":     ##Should give initial params?
+				# 	self.stim_parameters = {'dot_params': [{'radius': 10.0,     ##moving dot from here
+				# 								            'moving_dot_init_x_pos': 0.0,
+				# 								            'moving_dot_init_y_pos': 0.0,
+				# 								            'v_x': 0.01,
+				# 								            'v_y': 0.0,
+				# 								            'l_v': 150,
+				# 								            'moving_dot_brightness': 1.0},
+				# 								            {'radius': 10.0,     ##moving dot from here
+				# 								            'moving_dot_init_x_pos': 0.0,
+				# 								            'moving_dot_init_y_pos': 0.0,
+				# 								            'v_x': 0.01,
+				# 								            'v_y': 0.0,
+				# 								            'l_v': 150,
+				# 								            'moving_dot_brightness': 1.0}]} ## moving dot to here
+				elif self.stim_type == "Grating":
+					self.stim_parameters = {'frequency': 1,
+												   'init_phase': 0.0,
+												   'velocity': 0.02,
+												   'contrast': 1.0}
+				elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
+					self.stim_parameters = {}
 
 			# refresh panel
 			self.stim_choice_panel.Refresh()
