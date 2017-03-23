@@ -48,7 +48,9 @@ class ExperimentNameDialog():
 
 		# create the form
 		self.dialog_window = Form()
-		self.dialog_window.Height = 150
+		self.dialog_window.AutoSize = True
+		self.dialog_window.Width = 400
+		self.dialog_window.MaximumSize = Size(400, 220)
 		self.dialog_window.StartPosition = FormStartPosition.CenterScreen
 		self.dialog_window.Text = title
 		self.dialog_window.FormBorderStyle = FormBorderStyle.FixedSingle
@@ -61,7 +63,7 @@ class ExperimentNameDialog():
 		self.panel.Padding = Padding(10, 10, 0, 10)
 		self.panel.FlowDirection = FlowDirection.TopDown
 		self.panel.WrapContents = False
-		self.panel.Height = 70
+		self.panel.AutoSize = True
 		self.panel.Font = body_font
 
 		# add the dialog text
@@ -76,9 +78,10 @@ class ExperimentNameDialog():
 		self.exp_name_box = TextBox()
 		self.exp_name_box.Text = default_input
 		self.exp_name_box.Parent = self.panel
-		self.exp_name_box.Width = self.panel.Width - 20
+		self.exp_name_box.Width = self.panel.Width - 30
 		self.exp_name_box.AutoSize = True
 		self.exp_name_box.BackColor = button_panel_color
+		self.exp_name_box.Font = Font(body_font.FontFamily, 18)
 
 		# add save button panel
 		self.add_save_button_panel()
@@ -97,7 +100,7 @@ class ExperimentNameDialog():
 		self.save_button_panel.Dock = DockStyle.Bottom
 		self.save_button_panel.Padding = Padding(10, 0, 10, 10)
 		self.save_button_panel.WrapContents = False
-		self.save_button_panel.Height = 40
+		self.save_button_panel.AutoSize = True
 		self.save_button_panel.Font = body_font
 		self.save_button_panel.FlowDirection = FlowDirection.LeftToRight
 
@@ -171,9 +174,11 @@ class ConfigNameDialog():
 
 		# create the form
 		self.dialog_window = Form()
-		self.dialog_window.Height = 150
+		self.dialog_window.AutoSize = True
+		self.dialog_window.Width = 400
 		self.dialog_window.StartPosition = FormStartPosition.CenterScreen
 		self.dialog_window.Text = title
+		self.dialog_window.MaximumSize = Size(400, 220)
 		self.dialog_window.FormBorderStyle = FormBorderStyle.FixedSingle
 
 		# create the main panel
@@ -184,7 +189,7 @@ class ConfigNameDialog():
 		self.panel.Padding = Padding(10, 10, 0, 10)
 		self.panel.FlowDirection = FlowDirection.TopDown
 		self.panel.WrapContents = False
-		self.panel.Height = 70
+		self.panel.AutoSize = True
 		self.panel.Font = body_font
 
 		# add the dialog text
@@ -199,9 +204,10 @@ class ConfigNameDialog():
 		self.config_name_box = TextBox()
 		self.config_name_box.Text = default_input
 		self.config_name_box.Parent = self.panel
-		self.config_name_box.Width = self.panel.Width - 20
+		self.config_name_box.Width = self.dialog_window.Width - 30
 		self.config_name_box.AutoSize = True
 		self.config_name_box.BackColor = button_panel_color
+		self.config_name_box.Font = Font(body_font.FontFamily, 18)
 
 		# add save button panel
 		self.add_save_button_panel()
@@ -220,9 +226,10 @@ class ConfigNameDialog():
 		self.save_button_panel.Dock = DockStyle.Bottom
 		self.save_button_panel.Padding = Padding(10, 0, 10, 10)
 		self.save_button_panel.WrapContents = False
-		self.save_button_panel.Height = 40
+		# self.save_button_panel.Height = 40
 		self.save_button_panel.Font = body_font
 		self.save_button_panel.FlowDirection = FlowDirection.LeftToRight
+		self.save_button_panel.AutoSize = True
 
 		# add save button
 		self.save_button = Button()
@@ -230,6 +237,7 @@ class ConfigNameDialog():
 		self.save_button.Text = "Save"
 		self.save_button.Click += self.on_save_button_click
 		self.save_button.BackColor = button_color
+		self.save_button.AutoSize = True
 
 		# save button is activated when user presses Enter
 		self.dialog_window.AcceptButton = self.save_button
@@ -380,6 +388,8 @@ class StimDialog():
 		self.stim_chooser.SelectionChangeCommitted += self.on_stim_choice
 		self.stim_chooser.Text = self.stim_type
 		self.stim_chooser.Width = self.dialog_window.Width - 40
+		self.stim_chooser.AutoSize = True
+		self.stim_chooser.Font = Font(body_font.FontFamily, 18)
 
 	def add_stim_param_panel(self):
 		# create stim param panel
@@ -392,7 +402,8 @@ class StimDialog():
 		self.stim_param_panel.WrapContents = False
 		self.stim_param_panel.AutoScroll = True
 		self.stim_param_panel.Font = body_font
-		self.stim_param_panel.Height = 500
+		self.stim_param_panel.AutoSize = True
+		self.stim_param_panel.MaximumSize = Size(0, 500)
 
 	def populate_stim_param_panel(self):
 		# empty stim param panel
@@ -411,6 +422,7 @@ class StimDialog():
 		self.name_textbox.Text = str(self.stim_name)
 		self.name_textbox.AutoSize = True
 		self.name_textbox.BackColor = button_panel_color
+		self.name_textbox.Font = Font(body_font.FontFamily, 18)
 
 		# add duration label & textbox
 		add_param_label('Duration (s):', self.stim_param_panel)
@@ -419,6 +431,7 @@ class StimDialog():
 		self.duration_textbox.Text = str(self.stim_duration)
 		self.duration_textbox.AutoSize = True
 		self.duration_textbox.BackColor = button_panel_color
+		self.duration_textbox.Font = Font(body_font.FontFamily, 18)
 
 		# add parameters heading label
 		if self.stim_type not in ("Delay", "Black Flash", "White Flash"):
@@ -474,6 +487,7 @@ class StimDialog():
 		self.stim_param_textboxes[name].Text = str(self.stim_parameters[name])
 		self.stim_param_textboxes[name].AutoSize = True
 		self.stim_param_textboxes[name].BackColor = textbox_color
+		self.stim_param_textboxes[name].Font = Font(body_font.FontFamily, 18)
 
 	def on_stim_choice(self, sender, event):
 		# save a copy of the current stim params for the currently selected stim type
@@ -564,6 +578,7 @@ class StimDialog():
 		self.save_button.Text = "Save"
 		self.save_button.Click += self.on_save_button_click
 		self.save_button.BackColor = button_color
+		self.save_button.AutoSize = True
 
 		# save button is activated when user presses Enter
 		self.dialog_window.AcceptButton = self.save_button
@@ -574,6 +589,7 @@ class StimDialog():
 		self.close_button.Text = "Close"
 		self.close_button.DialogResult = DialogResult.Cancel
 		self.close_button.BackColor = button_color
+		self.close_button.AutoSize = True
 
 	def on_save_button_click(self, sender, event):
 		# save stim params
@@ -730,7 +746,7 @@ class TTLDialog():
 		self.TTL_param_panel.WrapContents = False
 		self.TTL_param_panel.AutoScroll = True
 		self.TTL_param_panel.Font = body_font
-		self.TTL_param_panel.Height = 250
+		self.TTL_param_panel.AutoSize = True
 
 	def populate_TTL_param_panel(self):
 		# initialize TTL param text controls dict
@@ -755,6 +771,8 @@ class TTLDialog():
 		self.TTL_param_textboxes[name].Text = str(self.TTL_params[name])
 		self.TTL_param_textboxes[name].Width = 150
 		self.TTL_param_textboxes[name].BackColor = textbox_color
+		self.TTL_param_textboxes[name].AutoSize = True
+		self.TTL_param_textboxes[name].Font = Font(body_font.FontFamily, 18)
 
 	def add_save_button_panel(self):
 		# create save button panel
@@ -773,6 +791,7 @@ class TTLDialog():
 		self.save_button.Text = "Save"
 		self.save_button.Click += self.on_save_button_click
 		self.save_button.BackColor = button_color
+		self.save_button.AutoSize = True
 
 		# save button is activated when user presses Enter
 		self.dialog_window.AcceptButton = self.save_button
@@ -783,6 +802,7 @@ class TTLDialog():
 		self.close_button.Text = "Close"
 		self.close_button.DialogResult = DialogResult.Cancel
 		self.close_button.BackColor = button_color
+		self.close_button.AutoSize = True
 
 	def on_save_button_click(self, sender, event):
 		# save TTL params
@@ -864,8 +884,7 @@ class ParamWindow(Form):
 		self.FormBorderStyle = FormBorderStyle.FixedSingle
 		self.Top = 30
 		self.Left = 30
-		self.Width = 500
-		self.Height = 800
+		self.AutoSize = True
 
 		# create dialogs
 		self.experiment_name_dialog = ExperimentNameDialog()
@@ -904,13 +923,14 @@ class ParamWindow(Form):
 		self.exp_button_panel.Dock = DockStyle.Top
 		self.exp_button_panel.FlowDirection = FlowDirection.LeftToRight
 		self.exp_button_panel.WrapContents = False
-		self.exp_button_panel.Height = 40
+		self.exp_button_panel.AutoSize = True
 		self.exp_button_panel.Font = body_font
 
 		# add new exp button
 		new_exp_button = Button()
 		new_exp_button.Parent = self.exp_button_panel
 		new_exp_button.Text = "New"
+		new_exp_button.AutoSize = True
 		new_exp_button.Click += self.add_new_experiment
 		new_exp_button.BackColor = button_color
 
@@ -918,6 +938,7 @@ class ParamWindow(Form):
 		self.remove_exp_button = Button()
 		self.remove_exp_button.Parent = self.exp_button_panel
 		self.remove_exp_button.Text = "Delete"
+		self.remove_exp_button.AutoSize = True
 		self.remove_exp_button.Click += self.remove_experiment
 		self.remove_exp_button.BackColor = button_color
 
@@ -929,6 +950,7 @@ class ParamWindow(Form):
 		rename_exp_button = Button()
 		rename_exp_button.Parent = self.exp_button_panel
 		rename_exp_button.Text = "Rename"
+		rename_exp_button.AutoSize = True
 		rename_exp_button.Click += self.rename_experiment
 		rename_exp_button.BackColor = button_color
 
@@ -940,7 +962,7 @@ class ParamWindow(Form):
 		self.exp_choice_panel.Padding = Padding(10, 10, 0, 10)
 		self.exp_choice_panel.FlowDirection = FlowDirection.TopDown
 		self.exp_choice_panel.WrapContents = False
-		self.exp_choice_panel.Height = 70
+		self.exp_choice_panel.AutoSize = True
 		self.exp_choice_panel.Font = body_font
 
 		# add exp choice label
@@ -957,6 +979,8 @@ class ParamWindow(Form):
 		self.exp_chooser.SelectionChangeCommitted += self.on_exp_choice
 		self.exp_chooser.Text = self.controller.experiments['current_experiment']
 		self.exp_chooser.Width = self.Width - 35
+		self.exp_chooser.AutoSize = True
+		self.exp_chooser.Font = Font(body_font.FontFamily, 18)
 
 	def on_exp_choice(self, sender, event):
 		# get new exp name
@@ -1073,7 +1097,8 @@ class ParamWindow(Form):
 		self.exp_param_panel.Padding = Padding(10)
 		self.exp_param_panel.FlowDirection = FlowDirection.LeftToRight
 		self.exp_param_panel.WrapContents = True
-		self.exp_param_panel.Height = 250
+		# self.exp_param_panel.Height = 250
+		self.exp_param_panel.AutoSize = True
 		self.exp_param_panel.Font = body_font
 
 	def populate_exp_param_panel(self):
@@ -1107,8 +1132,9 @@ class ParamWindow(Form):
 		exp_param_subpanel.Padding = Padding(0)
 		exp_param_subpanel.FlowDirection = FlowDirection.TopDown
 		exp_param_subpanel.WrapContents = False
-		exp_param_subpanel.Width = 150
-		exp_param_subpanel.Height = 60
+		exp_param_subpanel.Width = int(self.Width/3) - 20
+		# exp_param_subpanel.Height = 60
+		exp_param_subpanel.AutoSize = True
 		exp_param_subpanel.Font = body_font
 
 		self.add_exp_param_slider_to_window('x_offset', 'Viewport x offset', 0, 100)
@@ -1123,8 +1149,9 @@ class ParamWindow(Form):
 		exp_param_subpanel.Padding = Padding(0)
 		exp_param_subpanel.FlowDirection = FlowDirection.TopDown
 		exp_param_subpanel.WrapContents = False
-		exp_param_subpanel.Width = 150
-		exp_param_subpanel.Height = 60
+		exp_param_subpanel.Width = int(self.Width/3) - 20
+		# exp_param_subpanel.Height = 60
+		exp_param_subpanel.AutoSize = True
 		exp_param_subpanel.Font = body_font
 
 		# add param label
@@ -1134,8 +1161,9 @@ class ParamWindow(Form):
 		self.exp_param_textboxes[name] = TextBox()
 		self.exp_param_textboxes[name].Parent = exp_param_subpanel
 		self.exp_param_textboxes[name].Text = str(self.controller.experiment_params[name])
-		self.exp_param_textboxes[name].Width = 140
+		self.exp_param_textboxes[name].Width = int(self.Width/3) - 20
 		self.exp_param_textboxes[name].BackColor = button_panel_color
+		self.exp_param_textboxes[name].Font = Font(body_font.FontFamily, 18)
 
 	def add_exp_param_slider_to_window(self, name, label_text, min, max):
 		# create exp param panel
@@ -1146,8 +1174,9 @@ class ParamWindow(Form):
 		exp_param_subpanel.Padding = Padding(0)
 		exp_param_subpanel.FlowDirection = FlowDirection.TopDown
 		exp_param_subpanel.WrapContents = False
-		exp_param_subpanel.Width = 150
-		exp_param_subpanel.Height = 60
+		exp_param_subpanel.Width = int(self.Width/3) - 20
+		# exp_param_subpanel.Height = 60
+		exp_param_subpanel.AutoSize = True
 		exp_param_subpanel.Font = body_font
 
 		# add param label
@@ -1165,7 +1194,7 @@ class ParamWindow(Form):
 		self.exp_param_sliders[name].Minimum = min
 		self.exp_param_sliders[name].Maximum = max
 		self.exp_param_sliders[name].Value = float(self.controller.experiment_params[name])*100.0
-		self.exp_param_sliders[name].Width = 140
+		self.exp_param_sliders[name].Width = int(self.Width/3) - 20
 		self.exp_param_sliders[name].Name = name
 		self.exp_param_sliders[name].TickFrequency = 100
 		self.exp_param_sliders[name].Scroll += self.on_slider_scroll
@@ -1188,7 +1217,7 @@ class ParamWindow(Form):
 		self.config_choice_panel.Padding = Padding(10, 10, 0, 10)
 		self.config_choice_panel.FlowDirection = FlowDirection.TopDown
 		self.config_choice_panel.WrapContents = False
-		self.config_choice_panel.Height = 70
+		self.config_choice_panel.AutoSize = True
 		self.config_choice_panel.Font = body_font
 
 	def populate_config_choice_panel(self):
@@ -1212,6 +1241,8 @@ class ParamWindow(Form):
 		self.config_chooser.SelectionChangeCommitted += self.on_config_choice
 		self.config_chooser.Text = self.controller.configs['current_config']
 		self.config_chooser.Width = self.Width - 35
+		self.config_chooser.AutoSize = True
+		self.config_chooser.Font = Font(body_font.FontFamily, 18)
 
 	def on_config_choice(self, sender, event):
 		# get new config name
@@ -1236,7 +1267,7 @@ class ParamWindow(Form):
 		self.config_button_panel.Dock = DockStyle.Top
 		self.config_button_panel.FlowDirection = FlowDirection.LeftToRight
 		self.config_button_panel.WrapContents = False
-		self.config_button_panel.Height = 40
+		self.config_button_panel.AutoSize = True
 		self.config_button_panel.Font = body_font
 
 	def populate_config_button_panel(self):
@@ -1252,6 +1283,7 @@ class ParamWindow(Form):
 		new_config_button.Text = "New"
 		new_config_button.Click += self.add_new_config
 		new_config_button.BackColor = button_color
+		new_config_button.AutoSize = True
 
 		# add remove config button
 		self.remove_config_button = Button()
@@ -1259,6 +1291,7 @@ class ParamWindow(Form):
 		self.remove_config_button.Text = "Delete"
 		self.remove_config_button.Click += self.remove_config
 		self.remove_config_button.BackColor = button_color
+		self.remove_config_button.AutoSize = True
 		if len(self.controller.configs['configs_list']) == 1:
 			self.remove_config_button.Enabled = False
 
@@ -1268,6 +1301,7 @@ class ParamWindow(Form):
 		rename_config_button.Text = "Rename"
 		rename_config_button.Click += self.rename_config
 		rename_config_button.BackColor = button_color
+		rename_config_button.AutoSize = True
 
 	def add_new_config(self, sender, event):
 		# stop any running stim
@@ -1353,6 +1387,7 @@ class ParamWindow(Form):
 		self.stim_list_panel.WrapContents = False
 		self.stim_list_panel.AutoScroll = True
 		self.stim_list_panel.Width = self.Width
+		self.stim_list_panel.AutoSize = True
 		self.stim_list_panel.Font = body_font
 
 	def populate_stim_list_panel(self):
@@ -1394,7 +1429,7 @@ class ParamWindow(Form):
 		edit_button = Button()
 		edit_button.Parent = subpanel
 		edit_button.Text = "Edit"
-		edit_button.Width = 60
+		edit_button.AutoSize = True
 		edit_button.Click += self.edit_stim
 		edit_button.BackColor = button_color
 
@@ -1405,7 +1440,7 @@ class ParamWindow(Form):
 		delete_button = Button()
 		delete_button.Parent = subpanel
 		delete_button.Text = "Delete"
-		delete_button.Width = 60
+		delete_button.AutoSize = True
 		delete_button.Click += self.remove_stim
 		delete_button.BackColor = button_color
 
@@ -1417,6 +1452,7 @@ class ParamWindow(Form):
 		stim_name_label.Parent = subpanel
 		stim_name_label.Text = self.controller.config_params['stim_list'][i]
 		stim_name_label.Width = 120
+		stim_name_label.AutoSize = True
 		stim_name_label.Padding = Padding(0, 7, 0, 0)
 		stim_name_label.AutoEllipsis = True
 
@@ -1427,7 +1463,8 @@ class ParamWindow(Form):
 		stim_type_label = Label()
 		stim_type_label.Parent = subpanel
 		stim_type_label.Text = stim_type
-		stim_type_label.Width = 90
+		stim_type_label.MinimumSize = Size(360, 0)
+		stim_type_label.AutoSize = True
 		stim_type_label.Padding = Padding(0, 7, 0, 0)
 
 		# add stim type label to list of stim type labels
@@ -1437,7 +1474,8 @@ class ParamWindow(Form):
 		duration_label = Label()
 		duration_label.Parent = subpanel
 		duration_label.Text = str(self.controller.config_params['durations_list'][i]) + "s"
-		duration_label.Width = 40
+		duration_label.AutoSize = True
+		duration_label.Width = 100
 		duration_label.Padding = Padding(0, 7, 0, 0)
 
 		# add duration label to list of duration labels
@@ -1447,7 +1485,8 @@ class ParamWindow(Form):
 		move_up_button = Button()
 		move_up_button.Parent = subpanel
 		move_up_button.Text = u"\u02C4"
-		move_up_button.Width = 30
+		move_up_button.MaximumSize = Size(40, 0)
+		move_up_button.AutoSize = True
 		move_up_button.Click += self.move_up_stim
 		move_up_button.BackColor = button_color
 
@@ -1455,7 +1494,8 @@ class ParamWindow(Form):
 		move_down_button = Button()
 		move_down_button.Parent = subpanel
 		move_down_button.Text = u"\u02C5"
-		move_down_button.Width = 30
+		move_down_button.MaximumSize = Size(40, 0)
+		move_down_button.AutoSize = True
 		move_down_button.Click += self.move_down_stim
 		move_down_button.BackColor = button_color
 
@@ -1608,7 +1648,7 @@ class ParamWindow(Form):
 		self.save_button_panel.Dock = DockStyle.Bottom
 		self.save_button_panel.Padding = Padding(10)
 		self.save_button_panel.WrapContents = False
-		self.save_button_panel.Height = 50
+		self.save_button_panel.AutoSize = True
 		self.save_button_panel.Font = body_font
 
 		# add new stim button
@@ -1617,6 +1657,7 @@ class ParamWindow(Form):
 		self.add_stim_button.Text = "Add Stim"
 		self.add_stim_button.Click += self.add_stim
 		self.add_stim_button.BackColor = button_color
+		self.add_stim_button.AutoSize = True
 
 		# add save button
 		self.save_button = Button()
@@ -1624,6 +1665,7 @@ class ParamWindow(Form):
 		self.save_button.Text = "Save"
 		self.save_button.Click += self.save_experiment_params
 		self.save_button.BackColor = button_color
+		self.save_button.AutoSize = True
 
 		self.AcceptButton = self.save_button
 
@@ -1633,6 +1675,7 @@ class ParamWindow(Form):
 		self.start_stop_button.Text = "Start"
 		self.start_stop_button.Click += self.start_stop_stim
 		self.start_stop_button.BackColor = button_color
+		self.start_stop_button.AutoSize = True
 
 		# add edit TTL params button
 		self.ttl_button = Button()
@@ -1640,6 +1683,7 @@ class ParamWindow(Form):
 		self.ttl_button.Text = "TTL"
 		self.ttl_button.Click += self.edit_TTL_params
 		self.ttl_button.BackColor = button_color
+		self.ttl_button.AutoSize = True
 
 	def add_stim(self, sender, event):
 		# stop any running stim
