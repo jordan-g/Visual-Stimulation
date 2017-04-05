@@ -7,6 +7,8 @@ import shutil
 import datetime
 import json
 
+from shared import *
+
 class StimController():
     def __init__(self):
         print("Controller: Initializing.")
@@ -131,14 +133,7 @@ class StimController():
                     pass
         except:
             # if none exist, create & save a default set of experiment params
-            self.experiment_params = {'screen_cm_width': 28.57,
-                                      'screen_px_width': 1440,
-                                      'distance': 30,
-                                      'width': 0.5,
-                                      'height': 0.5,
-                                      'x_offset': 0,
-                                      'y_offset': 0
-                                      }
+            self.experiment_params = DEFAULT_EXPERIMENT_PARAMS
 
             # calculate resolution param
             self.experiment_params['resolution'] = self.experiment_params['screen_px_width']/self.experiment_params['screen_cm_width']
@@ -205,21 +200,7 @@ class StimController():
 
         except:
             # if none exist, create & save a default set of config params
-            self.config_params = {'stim_list': ['Stim 1'],
-                                 'durations_list': [10],
-                                 'types_list': ['Looming Dot'],
-                                 'parameters_list': [{'looming_dot_init_x_pos': 0,
-                                                      'looming_dot_init_y_pos': 0,
-                                                      'l_v': 150,                   ## edited from 150 to 20
-                                                      'looming_dot_brightness': 1.0,
-                                                      'background_brightness': 0
-                                                     }],
-                                 'TTL_params': {'delay': 10,      # ms
-                                                'frequency': 50,  # Hz
-                                                'pulse_width': 1, # ms
-                                                'duration': 5,    # s
-                                               }
-                                 }
+            self.config_params = DEFAULT_CONFIG_PARAMS
 
             self.save_config_params()
 
@@ -436,6 +417,39 @@ class StimController():
     def change_param(self, param_dimension, change_in_param):
         self.stim_window.change_param(param_dimension, change_in_param)
 
+    def default_stim_params(self, stim_type):
+        # create new stim parameters
+        if stim_type == "Looming Dot":
+            stim_parameters = DEFAULT_LOOMING_DOT_PARAMS
+        elif stim_type == "Moving Dot":
+            stim_parameters = DEFAULT_MOVING_DOT_PARAMS
+        elif stim_type == "Combined Dots":     ##Should give initial params?
+            stim_parameters = DEFAULT_COMBINED_DOTS_PARAMS
+        # elif stim_type == "Multiple Moving Dots":     ##Should give initial params?
+        #   stim_parameters = {'dot_params': [{'radius': 10.0,     ##moving dot from here
+        #                                           'moving_dot_init_x_pos': 0.0,
+        #                                           'moving_dot_init_y_pos': 0.0,
+        #                                           'v_x': 0.01,
+        #                                           'v_y': 0.0,
+        #                                           'l_v': 150,
+        #                                           'moving_dot_brightness': 1.0},
+        #                                           {'radius': 10.0,     ##moving dot from here
+        #                                           'moving_dot_init_x_pos': 0.0,
+        #                                           'moving_dot_init_y_pos': 0.0,
+        #                                           'v_x': 0.01,
+        #                                           'v_y': 0.0,
+        #                                           'l_v': 150,
+        #                                           'moving_dot_brightness': 1.0}]} ## moving dot to here
+        elif stim_type == "Grating":
+            stim_parameters = DEFAULT_GRATING_PARAMS
+        elif stim_type in ("Delay", "Black Flash", "White Flash"):
+            stim_parameters = {}
+
+        return stim_parameters
+
+    def default_stim_duration(self):
+        return DEFAULT_STIM_DURATION
+
     def close_windows(self):
         print("Controller: Closing windows.")
 
@@ -450,3 +464,42 @@ class StimController():
         self.stim_thread.join()
 
         print("Controller: Closed all threads.")
+
+# --- HELPER FUNCTIONS --- #
+
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+def is_positive_number(s):
+    return is_number(s) and float(s) > 0
+
+def is_nonnegative_number(s):
+    return is_number(s) and float(s) >= 0
+
+def is_number_between_0_and_1(s):
+    return is_number(s) and 0 <= float(s) <= 1
+
+# ------------------------ #
+
+def add_heading_label(text, panel):
+    # add heading label
+    label = Label()
+    label.Parent = panel
+    label.Text = text
+    label.AutoSize = True
+    label.Font = controller.HEADER_FONT
+    label.Margin = Padding(0, 5, 0, 5)
+
+def add_param_label(text, panel):
+    # add param label
+    label = Label()
+    label.Parent = panel
+    label.Text = text
+    label.AutoSize = True
+    label.Font = controller.BODY_FONT
+    label.Margin = Padding(0, 5, 0, 0)
+    label.Width = panel.Width
