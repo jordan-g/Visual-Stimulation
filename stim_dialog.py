@@ -62,13 +62,13 @@ class StimDialog():
         self.dialog_window.StartPosition = FormStartPosition.CenterScreen
         self.dialog_window.Width = 400
 
-        # add & populate stim choice panel
-        self.add_stim_choice_panel()
-        self.populate_stim_choice_panel()
-
         # add & populate stim param panel
         self.add_stim_param_panel()
         self.populate_stim_param_panel()
+
+        # add & populate stim choice panel
+        self.add_stim_choice_panel()
+        self.populate_stim_choice_panel()
 
         # add save button panel
         self.add_save_button_panel()
@@ -87,7 +87,7 @@ class StimDialog():
         self.stim_choice_panel = FlowLayoutPanel()
         self.stim_choice_panel.Parent = self.dialog_window
         self.stim_choice_panel.BackColor = CHOICE_PANEL_COLOR
-        self.stim_choice_panel.Dock = DockStyle.Bottom
+        self.stim_choice_panel.Dock = DockStyle.Top
         self.stim_choice_panel.Padding = Padding(10)
         self.stim_choice_panel.FlowDirection = FlowDirection.TopDown
         self.stim_choice_panel.WrapContents = False
@@ -123,7 +123,7 @@ class StimDialog():
         self.stim_param_panel = FlowLayoutPanel()
         self.stim_param_panel.Parent = self.dialog_window
         self.stim_param_panel.BackColor = PARAM_PANEL_COLOR
-        self.stim_param_panel.Dock = DockStyle.Bottom
+        self.stim_param_panel.Dock = DockStyle.Top
         self.stim_param_panel.Padding = Padding(10)
         self.stim_param_panel.FlowDirection = FlowDirection.TopDown
         self.stim_param_panel.WrapContents = False
@@ -217,6 +217,9 @@ class StimDialog():
         self.stim_param_textboxes[name].Font = Font(BODY_FONT.FontFamily, 18)
 
     def on_stim_choice(self, sender, event):
+        # stop the dialog window from refreshing
+        self.dialog_window.SuspendLayout()
+
         # save a copy of the current stim params for the currently selected stim type
         self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
         self.saved_stim_parameters[self.stim_type] = {key: float(value) for (key, value) in self.stim_param_textbox_values.items()}
@@ -238,8 +241,13 @@ class StimDialog():
             # refresh panel
             self.stim_choice_panel.Refresh()
 
+            self.stim_choice_panel.BackColor = stim_color(self.stim_type)
+
             # populate stim param panel
             self.populate_stim_param_panel()
+
+        # allow the dialog window to refresh
+        self.dialog_window.ResumeLayout()
 
     def add_save_button_panel(self):
         # create save button panel

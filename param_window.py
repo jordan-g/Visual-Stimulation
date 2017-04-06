@@ -3,7 +3,7 @@ clr.AddReference("System.Windows.Forms")
 clr.AddReference("System.Drawing")
 
 from System import Array
-from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel
+from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel, ControlStyles
 from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
@@ -536,11 +536,17 @@ class ParamWindow(Form):
 		self.stim_list_panel.FlowDirection = FlowDirection.TopDown
 		self.stim_list_panel.WrapContents = False
 		self.stim_list_panel.AutoScroll = True
-		self.stim_list_panel.Width = self.Width
+		# self.stim_list_panel.Width = self.Width
+		self.stim_list_panel.MaximumSize = Size(0, 500)
 		self.stim_list_panel.AutoSize = True
 		self.stim_list_panel.Font = BODY_FONT
 
 	def populate_stim_list_panel(self):
+		# stop the param window from refreshing
+		self.SuspendLayout()
+
+		self.stim_list_panel.Visible = False
+
 		# empty stim list panel
 		list_of_controls = self.stim_list_panel.Controls
 		for control in list_of_controls:
@@ -559,11 +565,16 @@ class ParamWindow(Form):
 		for i in range(len(self.controller.config_params['stim_list'])):
 			self.add_stim_to_stim_list_panel(i)
 
+		self.stim_list_panel.Visible = True
+
+		# allow the param window to refresh
+		self.ResumeLayout()
+
 	def add_stim_to_stim_list_panel(self, i):
 		# create stim subpanel
 		subpanel = FlowLayoutPanel()
 		subpanel.Parent = self.stim_list_panel
-		subpanel.Dock = DockStyle.Fill
+		subpanel.Dock = DockStyle.Left
 		subpanel.Padding = Padding(0)
 		subpanel.Margin = Padding(1, 0, 1, 1)
 		subpanel.FlowDirection = FlowDirection.LeftToRight
@@ -601,7 +612,8 @@ class ParamWindow(Form):
 		stim_name_label = Label()
 		stim_name_label.Parent = subpanel
 		stim_name_label.Text = self.controller.config_params['stim_list'][i]
-		stim_name_label.Width = 120
+		stim_name_label.MinimumSize = Size(320, 40)
+		stim_name_label.MaximumSize = Size(320, 40)
 		stim_name_label.AutoSize = True
 		stim_name_label.Padding = Padding(0, 7, 0, 0)
 		stim_name_label.AutoEllipsis = True
@@ -613,7 +625,9 @@ class ParamWindow(Form):
 		stim_type_label = Label()
 		stim_type_label.Parent = subpanel
 		stim_type_label.Text = stim_type
-		stim_type_label.MinimumSize = Size(360, 0)
+		stim_type_label.MinimumSize = Size(200, 40)
+		stim_type_label.MaximumSize = Size(200, 40)
+		stim_type_label.AutoEllipsis = True
 		stim_type_label.AutoSize = True
 		stim_type_label.Padding = Padding(0, 7, 0, 0)
 
@@ -624,7 +638,8 @@ class ParamWindow(Form):
 		duration_label = Label()
 		duration_label.Parent = subpanel
 		duration_label.Text = str(self.controller.config_params['durations_list'][i]) + "s"
-		duration_label.MinimumSize = Size(100, 0)
+		duration_label.MinimumSize = Size(100, 40)
+		duration_label.MaximumSize = Size(100, 40)
 		duration_label.AutoSize = True
 		duration_label.Padding = Padding(0, 7, 0, 0)
 
@@ -650,15 +665,7 @@ class ParamWindow(Form):
 		move_down_button.BackColor = BUTTON_COLOR
 
 		# add color accent
-		if stim_type == "Looming Dot":
-			color = LOOMING_DOT_COLOR
-		elif stim_type == "Moving Dot":
-			color = MOVING_DOT_COLOR
-		elif stim_type == "Grating":
-			color = GRATING_COLOR
-		else:
-			color = DELAY_COLOR
-		edit_button.BackColor = color
+		edit_button.BackColor = stim_color(stim_type)
 
 		# add subpanel to list of subpanels
 		self.stim_list_subpanels.append(subpanel)
@@ -733,6 +740,9 @@ class ParamWindow(Form):
 		# stop any running stim
 		self.controller.stop_stim()
 
+		# stop the param window from refreshing
+		self.SuspendLayout()
+
 		# get stim index
 		stim_index = sender.Parent.Tag
 
@@ -759,9 +769,15 @@ class ParamWindow(Form):
 		if self.controller.stim_window:
 			self.controller.stim_window.update_params()
 
+		# allow the param window to refresh
+		self.ResumeLayout()
+
 	def edit_stim(self, sender, event):
 		# stop any running stim
 		self.controller.stop_stim()
+
+		# stop the param window from refreshing
+		self.SuspendLayout()
 
 		# get stim index
 		stim_index = sender.Parent.Tag
@@ -780,15 +796,10 @@ class ParamWindow(Form):
 		self.stim_list_type_labels[stim_index].Text = str(stim_type)
 
 		# add color accent
-		if stim_type == "Looming Dot":
-			color = LOOMING_DOT_COLOR
-		elif stim_type == "Moving Dot":
-			color = MOVING_DOT_COLOR
-		elif stim_type == "Grating":
-			color = GRATING_COLOR
-		else:
-			color = DELAY_COLOR
-		self.stim_list_edit_buttons[stim_index].BackColor = color
+		self.stim_list_edit_buttons[stim_index].BackColor = stim_color(stim_type)
+
+		# allow the param window to refresh
+		self.ResumeLayout()
 
 	def add_save_button_panel(self):
 		# create save button panel
@@ -843,8 +854,14 @@ class ParamWindow(Form):
 		success = self.stim_dialog.ShowDialog(self.controller, None)
 
 		if success:
+			# stop the param window from refreshing
+			self.SuspendLayout()
+
 			# add stim subpanel
 			self.add_stim_to_stim_list_panel(len(self.controller.config_params['stim_list'])-1)
+
+			# allow the param window to refresh
+			self.ResumeLayout()
 
 	def save_experiment_params(self, sender, event):
 		print("ParamWindow: Saving experiment params.")

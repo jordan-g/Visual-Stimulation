@@ -108,6 +108,19 @@ def is_number_between_0_and_1(s):
 
 # ------------------------ #
 
+def stim_color(stim_type):
+    # get color accent for the provided stim type
+    if stim_type == "Looming Dot":
+        color = LOOMING_DOT_COLOR
+    elif stim_type == "Moving Dot":
+        color = MOVING_DOT_COLOR
+    elif stim_type == "Grating":
+        color = GRATING_COLOR
+    else:
+        color = DELAY_COLOR
+
+    return color
+
 def add_heading_label(text, panel):
     # add heading label
     label = Label()
