@@ -846,6 +846,13 @@ class ParamWindow(Form):
 		self.ttl_button.BackColor = BUTTON_COLOR
 		self.ttl_button.AutoSize = True
 
+		# add troubleshooting checkbox
+		self.troubleshooting_checkbox = CheckBox()
+		self.troubleshooting_checkbox.Checked = self.controller.troubleshooting
+		self.troubleshooting_checkbox.CheckChanged += self.controller.toggle_troubleshooting
+		self.troubleshooting_checkbox.Text = "Troubleshooting"
+		self.troubleshooting_checkbox.AutoSize = True
+
 	def add_stim(self, sender, event):
 		# stop any running stim
 		self.controller.stop_stim()

@@ -13,8 +13,13 @@ class StimController():
     def __init__(self):
         print("Controller: Initializing.")
 
-        self.running_stim = False
-        self.begin_stim   = False
+        self.running_stim = False # whether the stimulation is running
+        self.begin_stim   = False # whether the stimulation needs to begin
+
+        # troubleshooting mode - this determines whether external triggers
+        # will affect the stimulation and stimulation parameters will be
+        # saved to a text file
+        self.troubleshooting = True
 
         # load saved experiments
         self.load_experiments()
@@ -239,21 +244,22 @@ class StimController():
 
         self.stim_window = None
 
-    def start_stim(self):
-        print("Controller: Starting stim.")
+    def start_stim(self, ignore_troubleshooting=False):
+        if ignore_troubleshooting or not troubleshooting:
+            print("Controller: Starting stim.")
+            self.begin_stim   = True
+            self.running_stim = True
 
-        self.begin_stim = True
-        self.running_stim = True
+            self.param_window.start_stop_button.Text = "Stop"
 
-        self.param_window.start_stop_button.Text = "Stop"
+    def stop_stim(self, ignore_troubleshooting=False):
+        if ignore_troubleshooting or not troubleshooting:
+            print("Controller: Stopping stim.")
 
-    def stop_stim(self):
-        print("Controller: Stopping stim.")
+            self.begin_stim   = False
+            self.running_stim = False
 
-        self.begin_stim = False
-        self.running_stim = False
-
-        self.param_window.start_stop_button.Text = "Start"
+            self.param_window.start_stop_button.Text = "Start"
 
     def change_experiment(self, experiment_name):
         print("Controller: Changing experiment to {}.".format(experiment_name))
@@ -449,6 +455,9 @@ class StimController():
 
     def default_stim_duration(self):
         return DEFAULT_STIM_DURATION
+
+    def toggle_troubleshooting(self):
+        self.troubleshooting = not self.troubleshooting
 
     def close_windows(self):
         print("Controller: Closing windows.")
