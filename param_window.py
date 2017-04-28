@@ -850,6 +850,7 @@ class ParamWindow(Form):
 		##opens up param window now but doesn't load checkbox, gives an "unhandled exception error"
 		##that says "global name 'troubleshooting' not defined"
 		self.troubleshooting_checkbox = CheckBox()
+		self.troubleshooting_checkbox.Parent = self.save_button_panel
 		self.troubleshooting_checkbox.Checked = self.controller.troubleshooting
 		self.troubleshooting_checkbox.CheckedChanged += self.controller.toggle_troubleshooting ##changed checkChanged to checkedchanged
 		self.troubleshooting_checkbox.Text = "Troubleshooting"
@@ -909,9 +910,9 @@ class ParamWindow(Form):
 
 	def start_stop_stim(self, sender, event):
 		if self.controller.running_stim:
-			self.controller.stop_stim()
+			self.controller.stop_stim(ignore_troubleshooting=True)
 		else:
-			self.controller.start_stim()
+			self.controller.start_stim(ignore_troubleshooting=True)
 
 	def edit_TTL_params(self, sender, event):
 		# show TTL dialog
