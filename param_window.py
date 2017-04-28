@@ -847,12 +847,10 @@ class ParamWindow(Form):
 		self.ttl_button.AutoSize = True
 
 		# add troubleshooting checkbox
-		##opens up param window now but doesn't load checkbox, gives an "unhandled exception error"
-		##that says "global name 'troubleshooting' not defined"
 		self.troubleshooting_checkbox = CheckBox()
 		self.troubleshooting_checkbox.Parent = self.save_button_panel
 		self.troubleshooting_checkbox.Checked = self.controller.troubleshooting
-		self.troubleshooting_checkbox.CheckedChanged += self.controller.toggle_troubleshooting ##changed checkChanged to checkedchanged
+		self.troubleshooting_checkbox.CheckedChanged += self.controller.toggle_troubleshooting
 		self.troubleshooting_checkbox.Text = "Troubleshooting"
 		self.troubleshooting_checkbox.AutoSize = True
 
