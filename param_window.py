@@ -4,7 +4,7 @@ clr.AddReference("System.Drawing")
 
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel, ControlStyles
-from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar
+from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox ## added checkbox
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
@@ -847,9 +847,11 @@ class ParamWindow(Form):
 		self.ttl_button.AutoSize = True
 
 		# add troubleshooting checkbox
+		##opens up param window now but doesn't load checkbox, gives an "unhandled exception error"
+		##that says "global name 'troubleshooting' not defined"
 		self.troubleshooting_checkbox = CheckBox()
 		self.troubleshooting_checkbox.Checked = self.controller.troubleshooting
-		self.troubleshooting_checkbox.CheckChanged += self.controller.toggle_troubleshooting
+		self.troubleshooting_checkbox.CheckedChanged += self.controller.toggle_troubleshooting ##changed checkChanged to checkedchanged
 		self.troubleshooting_checkbox.Text = "Troubleshooting"
 		self.troubleshooting_checkbox.AutoSize = True
 
