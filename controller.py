@@ -229,6 +229,8 @@ class StimController():
 
         self.param_window = None
 
+        self.close_windows()
+
     def create_stim_window(self):
         print("Controller: Creating stim window.")
 
@@ -244,6 +246,8 @@ class StimController():
         print("Controller: Finished running stim window.")
 
         self.stim_window = None
+
+        self.close_windows()
 
     def start_stim(self, ignore_troubleshooting=False):
         if ignore_troubleshooting or not self.troubleshooting:
@@ -482,8 +486,11 @@ class StimController():
             self.stim_window.Exit()
 
         # close the threads
-        self.param_thread.join()
-        self.stim_thread.join()
+        try:
+            self.param_thread.join()
+            self.stim_thread.join()
+        except:
+            pass
 
         print("Controller: Closed all threads.")
 
