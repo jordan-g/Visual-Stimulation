@@ -853,6 +853,12 @@ class ParamWindow(Form):
 		self.troubleshooting_checkbox.Text = "Troubleshooting"
 		self.troubleshooting_checkbox.AutoSize = True
 
+		# add stimulation progress indicator
+		self.progress_label = Label()
+		self.progress_label.Text = ""
+		self.progress_label.ForeColor = Color.Red
+		self.progress_label.AutoSize = True
+
 	def add_stim(self, sender, event):
 		# stop any running stim
 		self.controller.stop_stim()
@@ -908,8 +914,18 @@ class ParamWindow(Form):
 	def start_stop_stim(self, sender, event):
 		if self.controller.running_stim:
 			self.controller.stop_stim()
+			self.progress_label.Text = ""
 		else:
 			self.controller.start_stim()
+
+			self.stim_start_time = time.time()
+
+			while self.controller.running_stim:
+				curr_time = time.time() - self.stim_start_time
+				minutes   = curr_time // 3600
+				seconds   = curr_time % 3600
+				stim_name = self.controller.stim_window.stim_type
+				self.progress_label.Text = "{0:02d}{1:02d} : {2}".format(minutes, seconds, stim_name)
 
 	def edit_TTL_params(self, sender, event):
 		# show TTL dialog
