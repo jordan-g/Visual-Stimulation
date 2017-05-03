@@ -4,13 +4,16 @@ clr.AddReference("System.Drawing")
 
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel, ControlStyles
-from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox ## added checkbox
+from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
 from name_dialog import ExperimentNameDialog, ConfigNameDialog
 from stim_dialog import StimDialog
 from ttl_dialog import TTLDialog
+
+import time
+import threading
 
 # import shared constants & helper functions
 from shared import *
@@ -856,8 +859,10 @@ class ParamWindow(Form):
 
 		# add stimulation progress indicator
 		self.progress_label = Label()
+		self.progress_label.Parent = self.save_button_panel
 		self.progress_label.Text = ""
 		self.progress_label.ForeColor = Color.Red
+		self.progress_label.Padding = Padding(5)
 		self.progress_label.AutoSize = True
 
 	def add_stim(self, sender, event):
@@ -915,18 +920,8 @@ class ParamWindow(Form):
 	def start_stop_stim(self, sender, event):
 		if self.controller.running_stim:
 			self.controller.stop_stim(ignore_troubleshooting=True)
-			self.progress_label.Text = ""
 		else:
 			self.controller.start_stim(ignore_troubleshooting=True)
-
-			self.stim_start_time = time.time()
-
-			while self.controller.running_stim:
-				curr_time = time.time() - self.stim_start_time
-				minutes   = curr_time // 3600
-				seconds   = curr_time % 3600
-				stim_name = self.controller.stim_window.stim_type
-				self.progress_label.Text = "{0:02d}{1:02d} : {2}".format(minutes, seconds, stim_name)
 
 	def edit_TTL_params(self, sender, event):
 		# show TTL dialog
