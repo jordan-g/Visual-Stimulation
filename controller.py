@@ -245,7 +245,7 @@ class StimController():
         self.stim_window = None
 
     def start_stim(self, ignore_troubleshooting=False):
-        if ignore_troubleshooting or not troubleshooting:
+        if ignore_troubleshooting or not self.troubleshooting:
             print("Controller: Starting stim.")
             self.begin_stim   = True
             self.running_stim = True
@@ -253,7 +253,7 @@ class StimController():
             self.param_window.start_stop_button.Text = "Stop"
 
     def stop_stim(self, ignore_troubleshooting=False):
-        if ignore_troubleshooting or not troubleshooting:
+        if ignore_troubleshooting or not self.troubleshooting:
             print("Controller: Stopping stim.")
 
             self.begin_stim   = False
@@ -456,8 +456,13 @@ class StimController():
     def default_stim_duration(self):
         return DEFAULT_STIM_DURATION
 
-    def toggle_troubleshooting(self):
+    def toggle_troubleshooting(self, sender=None, event=None):
         self.troubleshooting = not self.troubleshooting
+
+        if self.troubleshooting == True:
+            print("Troubleshooting mode enabled.")
+        else:
+            print("Troubleshooting mode disabled.")
 
     def close_windows(self):
         print("Controller: Closing windows.")
