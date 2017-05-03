@@ -4,13 +4,16 @@ clr.AddReference("System.Drawing")
 
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel, ControlStyles
-from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox ## added checkbox
+from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
 from name_dialog import ExperimentNameDialog, ConfigNameDialog
 from stim_dialog import StimDialog
 from ttl_dialog import TTLDialog
+
+import time
+import threading
 
 # import shared constants & helper functions
 from shared import *
@@ -853,6 +856,14 @@ class ParamWindow(Form):
 		self.troubleshooting_checkbox.CheckedChanged += self.controller.toggle_troubleshooting
 		self.troubleshooting_checkbox.Text = "Troubleshooting"
 		self.troubleshooting_checkbox.AutoSize = True
+
+		# add stimulation progress indicator
+		self.progress_label = Label()
+		self.progress_label.Parent = self.save_button_panel
+		self.progress_label.Text = ""
+		self.progress_label.ForeColor = Color.Red
+		self.progress_label.Padding = Padding(5)
+		self.progress_label.AutoSize = True
 
 	def add_stim(self, sender, event):
 		# stop any running stim

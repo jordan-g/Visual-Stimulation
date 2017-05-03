@@ -5,6 +5,7 @@ import threading
 import os
 import shutil
 import datetime
+import time
 import json
 
 from shared import *
@@ -247,6 +248,10 @@ class StimController():
     def start_stim(self, ignore_troubleshooting=False):
         if ignore_troubleshooting or not self.troubleshooting:
             print("Controller: Starting stim.")
+
+            self.timer_thread = Timer(self.param_window.progress_label, self)
+            self.timer_thread.start()
+
             self.begin_stim   = True
             self.running_stim = True
 
@@ -255,6 +260,9 @@ class StimController():
     def stop_stim(self, ignore_troubleshooting=False):
         if ignore_troubleshooting or not self.troubleshooting:
             print("Controller: Stopping stim.")
+
+            self.timer_thread.running = False
+            self.param_window.progress_label.Text = ""
 
             self.begin_stim   = False
             self.running_stim = False
@@ -478,6 +486,23 @@ class StimController():
         self.stim_thread.join()
 
         print("Controller: Closed all threads.")
+
+class Timer(threading.Thread):
+    def __init__(self, progress_label, controller):
+        super(Timer, self).__init__()
+        self.progress_label = progress_label
+        self.controller = controller
+        self.running = True
+
+    def run(self):
+        self.stim_start_time = time.time()
+
+        while self.running:
+            curr_time = time.time() - self.stim_start_time
+            minutes   = int(curr_time // 3600)
+            seconds   = int(curr_time % 3600)
+            stim_name = self.controller.stim_window.stim_type
+            self.progress_label.Text = "{0:02d}:{1:02d} - {2}".format(minutes, seconds, stim_name)
 
 # --- HELPER FUNCTIONS --- #
 
