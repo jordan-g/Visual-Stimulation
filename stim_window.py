@@ -583,6 +583,7 @@ class GratingStim():
         self.velocity_init = math.tan(math.radians(params['velocity']))*self.distance*self.resolution/1000.0 # px/ms
         self.velocity = self.velocity_init
         self.contrast = params['contrast']
+        self.brightness = params['brightness']
 
         self.t_init = -self.duration*1000.0 # ms
         self.t = self.t_init
@@ -595,7 +596,7 @@ class GratingStim():
     def genTexture(self):
         # generate the grating texture
         for x in range(self.stim_window.px_width):
-            w = (self.contrast*math.sin((self.frequency*x + self.phase)*2*math.pi) + 1.0)*255.0/2.0
+            w = int((self.contrast*math.sin((self.frequency*x + self.phase)*2*math.pi) + 1.0)*255.0*self.brightness/2.0)
             self.grating[4*x] = Byte(w)
             self.grating[4*x+1] = Byte(w)
             self.grating[4*x+2] = Byte(w)

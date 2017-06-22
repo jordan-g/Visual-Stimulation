@@ -69,7 +69,8 @@ DEFAULT_COMBINED_DOTS_PARAMS = {'radius': 10.0,
 DEFAULT_GRATING_PARAMS = {'frequency': 1,
                           'init_phase': 0.0,
                           'velocity': 0.02,
-                          'contrast': 1.0}
+                          'contrast': 1.0,
+                          'brightness': 1.0}
 
 # set default duration for new stims
 DEFAULT_STIM_DURATION = 10

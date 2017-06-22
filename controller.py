@@ -188,13 +188,15 @@ class StimController():
         try:
             # load config params
             with open(self.config_params_path, "r") as input_file:
-            	self.config_params = json.load(input_file)
+                self.config_params = json.load(input_file)
 
             # convert params to floats
             for i, duration in enumerate(self.config_params['durations_list']):
                 self.config_params['durations_list'][i] = float(duration)
 
             for i, params in enumerate(self.config_params['parameters_list']):
+                stim_type = self.config_params['types_list'][i]
+                self.config_params['parameters_list'][i] = self.default_stim_params(stim_type)
                 for key in params:
                     try:
                         self.config_params['parameters_list'][i][key] = float(params[key])
