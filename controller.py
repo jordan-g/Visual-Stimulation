@@ -16,6 +16,8 @@ class StimController():
 
         self.base_path = os.path.dirname(__file__)
 
+        self.display_index = 1
+
         self.timer_thread = None
 
         self.running_stim = False # whether the stimulation is running
@@ -246,17 +248,21 @@ class StimController():
         self.stim_window = StimWindow(self)
 
         # run stim window @ 60fps
-        self.stim_window.Run(60)
+        try:
+            self.stim_window.Run(60)
+        except:
+            pass
 
-        self.stim_window.stim = None
+        # if self.stim_window is not None:
+        # self.stim_window.stim = None
 
-        self.stim_window.Dispose()
+        # self.stim_window.Dispose()
 
-        print("Controller: Finished running stim window.")
+        # print("Controller: Finished running stim window.")
 
-        self.stim_window = None
+        # self.stim_window = None
 
-        self.close_windows()
+        # self.close_windows()
 
     def start_stim(self, ignore_troubleshooting=False):
         if ignore_troubleshooting or not self.troubleshooting:
@@ -486,6 +492,22 @@ class StimController():
             print("Troubleshooting mode enabled.")
         else:
             print("Troubleshooting mode disabled.")
+
+    def restart_stim_window(self, display_index):
+        self.display_index = display_index
+
+        print(self.display_index)
+
+        if self.stim_window:
+            self.stim_window.Dispose()
+
+        self.stim_window = None
+
+        self.stim_thread.join()
+
+        # start thread for stim window
+        self.stim_thread  = threading.Thread(target=self.create_stim_window)
+        self.stim_thread.start()
 
     def close_windows(self):
         print("Controller: Closing windows.")

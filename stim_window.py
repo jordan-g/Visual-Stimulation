@@ -21,27 +21,30 @@ import threading
 
 from perlin_noise import pnoise1
 
-# try to use a second display (projector)
-display = DisplayDevice.GetDisplay(DisplayIndex.Second)
-
-if display == None:
-    # fall back to the primary display (monitor)
-    display_width = 800
-    display_height = 800
-    window_flag = GameWindowFlags.Default
-
-    display = DisplayDevice.GetDisplay(DisplayIndex.Default)
-else:
-    display_width = 1920
-    display_height = 1080
-    window_flag = GameWindowFlags.Fullscreen
-
-    # set resolution, bits/pixel, refresh rate
-    display.ChangeResolution(display_width, display_height, 16, 60)
-
 class StimWindow(GameWindow):
-    def __new__(self, controller, window_name="Stimulus"):
+    def __new__(self, controller, window_name="Stimulus", display_index=1):
         self.controller = controller
+
+        if display_index == 1:
+            # try to use a second display (projector)
+            display = DisplayDevice.GetDisplay(DisplayIndex.Second)
+        else:
+            display = None
+
+        if display == None:
+            # fall back to the primary display (monitor)
+            display_width = 1280
+            display_height = 800
+            window_flag = GameWindowFlags.Default
+
+            display = DisplayDevice.GetDisplay(DisplayIndex.Default)
+        else:
+            display_width = 1280
+            display_height = 800
+            window_flag = GameWindowFlags.Fullscreen
+
+            # set resolution, bits/pixel, refresh rate
+            display.ChangeResolution(display_width, display_height, 16, 60)
 
         return GameWindow.__new__(self, display_width,
                                         display_height,
@@ -550,6 +553,8 @@ class GratingStim():
         self.duration = duration*1000.0 # ms
 
         self.rad_width = math.atan2(self.stim_window.px_width/2.0, self.distance*self.resolution)*2
+
+        print("rad width", self.rad_width)
 
         self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width
         self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width

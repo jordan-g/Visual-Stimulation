@@ -316,9 +316,9 @@ class ParamWindow(Form):
         exp_param_subpanel.Padding = Padding(0)
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
-        exp_param_subpanel.Width = int(self.Width/3) - 20
+        exp_param_subpanel.Width = int(self.Width/3) - 15
         # exp_param_subpanel.Height = 60
-        exp_param_subpanel.AutoSize = True
+        # exp_param_subpanel.AutoSize = True
         exp_param_subpanel.Font = BODY_FONT
 
         # add param label
@@ -341,9 +341,9 @@ class ParamWindow(Form):
         exp_param_subpanel.Padding = Padding(0)
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
-        exp_param_subpanel.Width = int(self.Width/3) - 20
+        exp_param_subpanel.Width = int(self.Width/3) - 15
         # exp_param_subpanel.Height = 60
-        exp_param_subpanel.AutoSize = True
+        # exp_param_subpanel.AutoSize = True
         exp_param_subpanel.Font = BODY_FONT
 
         # add param label
@@ -561,7 +561,7 @@ class ParamWindow(Form):
         self.stim_list_panel.Parent = self
         self.stim_list_panel.BackColor = PARAM_PANEL_COLOR
         self.stim_list_panel.Dock = DockStyle.Fill
-        self.stim_list_panel.Padding = Padding(0)
+        self.stim_list_panel.Padding = Padding(10)
         self.stim_list_panel.FlowDirection = FlowDirection.TopDown
         self.stim_list_panel.WrapContents = False
         self.stim_list_panel.AutoScroll = True
@@ -908,9 +908,40 @@ class ParamWindow(Form):
         self.progress_label = Label()
         self.progress_label.Parent = self.save_button_panel
         self.progress_label.Text = ""
+        self.progress_label.Width = 200
         self.progress_label.ForeColor = Color.Red
         self.progress_label.Padding = Padding(5)
-        self.progress_label.AutoSize = True
+        # self.progress_label.AutoSize = True
+
+        # add display chooser label
+        self.display_chooser_label = Label()
+        self.display_chooser_label.Parent = self.save_button_panel
+        self.display_chooser_label.Text = "Show stimulation on:"
+        self.display_chooser_label.Padding = Padding(5)
+        self.display_chooser_label.AutoSize = True
+
+        # add display chooser
+        self.display_chooser = ComboBox()
+        self.display_chooser.DropDownStyle = ComboBoxStyle.DropDownList
+        self.display_chooser.Parent = self.save_button_panel
+        self.display_chooser.Items.AddRange(Array[str](["Monitor", "Projector"]))
+        self.display_chooser.SelectionChangeCommitted += self.on_display_choice
+        self.display_chooser.Text = "Projector"
+        self.display_chooser.Width = 100
+        self.display_chooser.BackColor = BUTTON_PANEL_COLOR
+        self.display_chooser.Font = BODY_FONT
+
+    def on_display_choice(self, sender, event):
+        if self.controller.running_stim:
+            confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Changing where the stimulation is displayed will stop the currently-running stimulation. Continue?")
+        else:
+            confirmation = True
+
+        if confirmation:
+            # stop any running stim
+            self.controller.stop_stim(ignore_troubleshooting=True)
+
+            self.controller.restart_stim_window(display_index=["Monitor", "Projector"].index(self.display_chooser.SelectedItem.ToString()))
 
     def add_stim(self, sender, event):
         if self.controller.running_stim:
