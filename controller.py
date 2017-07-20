@@ -224,7 +224,7 @@ class StimController():
 
         # save config params to file
         with open(self.config_params_path, "w") as output_file:
-        	json.dump(self.config_params, output_file)
+            json.dump(self.config_params, output_file)
 
     def create_param_window(self):
         print("Controller: Creating param window.")
