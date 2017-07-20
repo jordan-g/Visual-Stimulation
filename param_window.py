@@ -674,106 +674,109 @@ class ParamWindow(Form):
 		self.stim_list_subpanels.append(subpanel)
 
 	def move_up_stim(self, sender, event):
-		# stop any running stim
-		self.controller.stop_stim(ignore_troubleshooting=True)
+		if len(self.controller.config_params['stim_list']) > 0:
+			# stop any running stim
+			self.controller.stop_stim(ignore_troubleshooting=True)
 
-		# get stim index
-		stim_index = sender.Parent.Tag
+			# get stim index
+			stim_index = sender.Parent.Tag
 
-		if stim_index != 0:
-			# rearrange subpanels
-			self.stim_list_panel.Controls.SetChildIndex(self.stim_list_panel.Controls[stim_index-1], stim_index)
+			if stim_index != 0:
+				# rearrange subpanels
+				self.stim_list_panel.Controls.SetChildIndex(self.stim_list_panel.Controls[stim_index-1], stim_index)
 
-			# rearrange tags
-			self.stim_list_panel.Controls[stim_index-1].Tag -= 1
-			self.stim_list_panel.Controls[stim_index].Tag += 1
-			
-			# update lists of controls
-			self.stim_list_subpanels[stim_index], self.stim_list_subpanels[stim_index-1] = self.stim_list_subpanels[stim_index-1], self.stim_list_subpanels[stim_index]
-			self.stim_list_duration_labels[stim_index], self.stim_list_duration_labels[stim_index-1] = self.stim_list_duration_labels[stim_index-1], self.stim_list_duration_labels[stim_index]
-			self.stim_list_name_labels[stim_index], self.stim_list_name_labels[stim_index-1] = self.stim_list_name_labels[stim_index-1], self.stim_list_name_labels[stim_index]
-			self.stim_list_type_labels[stim_index], self.stim_list_type_labels[stim_index-1] = self.stim_list_type_labels[stim_index-1], self.stim_list_type_labels[stim_index]
-			self.stim_list_edit_buttons[stim_index], self.stim_list_edit_buttons[stim_index-1] = self.stim_list_edit_buttons[stim_index-1], self.stim_list_edit_buttons[stim_index]
-			self.stim_list_delete_buttons[stim_index], self.stim_list_delete_buttons[stim_index-1] = self.stim_list_delete_buttons[stim_index-1], self.stim_list_delete_buttons[stim_index]
+				# rearrange tags
+				self.stim_list_panel.Controls[stim_index-1].Tag -= 1
+				self.stim_list_panel.Controls[stim_index].Tag += 1
+				
+				# update lists of controls
+				self.stim_list_subpanels[stim_index], self.stim_list_subpanels[stim_index-1] = self.stim_list_subpanels[stim_index-1], self.stim_list_subpanels[stim_index]
+				self.stim_list_duration_labels[stim_index], self.stim_list_duration_labels[stim_index-1] = self.stim_list_duration_labels[stim_index-1], self.stim_list_duration_labels[stim_index]
+				self.stim_list_name_labels[stim_index], self.stim_list_name_labels[stim_index-1] = self.stim_list_name_labels[stim_index-1], self.stim_list_name_labels[stim_index]
+				self.stim_list_type_labels[stim_index], self.stim_list_type_labels[stim_index-1] = self.stim_list_type_labels[stim_index-1], self.stim_list_type_labels[stim_index]
+				self.stim_list_edit_buttons[stim_index], self.stim_list_edit_buttons[stim_index-1] = self.stim_list_edit_buttons[stim_index-1], self.stim_list_edit_buttons[stim_index]
+				self.stim_list_delete_buttons[stim_index], self.stim_list_delete_buttons[stim_index-1] = self.stim_list_delete_buttons[stim_index-1], self.stim_list_delete_buttons[stim_index]
 
-			# update config params
-			self.controller.config_params['stim_list'][stim_index], self.controller.config_params['stim_list'][stim_index-1] = self.controller.config_params['stim_list'][stim_index-1], self.controller.config_params['stim_list'][stim_index]
-			self.controller.config_params['durations_list'][stim_index], self.controller.config_params['durations_list'][stim_index-1] = self.controller.config_params['durations_list'][stim_index-1], self.controller.config_params['durations_list'][stim_index]
-			self.controller.config_params['types_list'][stim_index], self.controller.config_params['types_list'][stim_index-1] = self.controller.config_params['types_list'][stim_index-1], self.controller.config_params['types_list'][stim_index]
-			self.controller.config_params['parameters_list'][stim_index], self.controller.config_params['parameters_list'][stim_index-1] = self.controller.config_params['parameters_list'][stim_index-1], self.controller.config_params['parameters_list'][stim_index]
+				# update config params
+				self.controller.config_params['stim_list'][stim_index], self.controller.config_params['stim_list'][stim_index-1] = self.controller.config_params['stim_list'][stim_index-1], self.controller.config_params['stim_list'][stim_index]
+				self.controller.config_params['durations_list'][stim_index], self.controller.config_params['durations_list'][stim_index-1] = self.controller.config_params['durations_list'][stim_index-1], self.controller.config_params['durations_list'][stim_index]
+				self.controller.config_params['types_list'][stim_index], self.controller.config_params['types_list'][stim_index-1] = self.controller.config_params['types_list'][stim_index-1], self.controller.config_params['types_list'][stim_index]
+				self.controller.config_params['parameters_list'][stim_index], self.controller.config_params['parameters_list'][stim_index-1] = self.controller.config_params['parameters_list'][stim_index-1], self.controller.config_params['parameters_list'][stim_index]
 
-			# update stim window's params
-			if self.controller.stim_window:
-				self.controller.stim_window.update_params()
+				# update stim window's params
+				if self.controller.stim_window:
+					self.controller.stim_window.update_params()
 
 	def move_down_stim(self, sender, event):
-		# stop any running stim
-		self.controller.stop_stim(ignore_troubleshooting=True)
+		if len(self.controller.config_params['stim_list']) > 0:
+			# stop any running stim
+			self.controller.stop_stim(ignore_troubleshooting=True)
 
-		# get stim index
-		stim_index = sender.Parent.Tag
+			# get stim index
+			stim_index = sender.Parent.Tag
 
-		if stim_index != self.stim_list_panel.Controls.Count - 1:
-			# rearrange subpanels
-			self.stim_list_panel.Controls.SetChildIndex(self.stim_list_panel.Controls[stim_index+1], stim_index)
+			if stim_index != self.stim_list_panel.Controls.Count - 1:
+				# rearrange subpanels
+				self.stim_list_panel.Controls.SetChildIndex(self.stim_list_panel.Controls[stim_index+1], stim_index)
 
-			# rearrange tags
-			self.stim_list_panel.Controls[stim_index+1].Tag += 1
-			self.stim_list_panel.Controls[stim_index].Tag -= 1
-			
-			# update lists of controls
-			self.stim_list_subpanels[stim_index], self.stim_list_subpanels[stim_index+1] = self.stim_list_subpanels[stim_index+1], self.stim_list_subpanels[stim_index]
-			self.stim_list_duration_labels[stim_index], self.stim_list_duration_labels[stim_index+1] = self.stim_list_duration_labels[stim_index+1], self.stim_list_duration_labels[stim_index]
-			self.stim_list_name_labels[stim_index], self.stim_list_name_labels[stim_index+1] = self.stim_list_name_labels[stim_index+1], self.stim_list_name_labels[stim_index]
-			self.stim_list_type_labels[stim_index], self.stim_list_type_labels[stim_index+1] = self.stim_list_type_labels[stim_index+1], self.stim_list_type_labels[stim_index]
-			self.stim_list_edit_buttons[stim_index], self.stim_list_edit_buttons[stim_index+1] = self.stim_list_edit_buttons[stim_index+1], self.stim_list_edit_buttons[stim_index]
-			self.stim_list_delete_buttons[stim_index], self.stim_list_delete_buttons[stim_index+1] = self.stim_list_delete_buttons[stim_index+1], self.stim_list_delete_buttons[stim_index]
+				# rearrange tags
+				self.stim_list_panel.Controls[stim_index+1].Tag += 1
+				self.stim_list_panel.Controls[stim_index].Tag -= 1
+				
+				# update lists of controls
+				self.stim_list_subpanels[stim_index], self.stim_list_subpanels[stim_index+1] = self.stim_list_subpanels[stim_index+1], self.stim_list_subpanels[stim_index]
+				self.stim_list_duration_labels[stim_index], self.stim_list_duration_labels[stim_index+1] = self.stim_list_duration_labels[stim_index+1], self.stim_list_duration_labels[stim_index]
+				self.stim_list_name_labels[stim_index], self.stim_list_name_labels[stim_index+1] = self.stim_list_name_labels[stim_index+1], self.stim_list_name_labels[stim_index]
+				self.stim_list_type_labels[stim_index], self.stim_list_type_labels[stim_index+1] = self.stim_list_type_labels[stim_index+1], self.stim_list_type_labels[stim_index]
+				self.stim_list_edit_buttons[stim_index], self.stim_list_edit_buttons[stim_index+1] = self.stim_list_edit_buttons[stim_index+1], self.stim_list_edit_buttons[stim_index]
+				self.stim_list_delete_buttons[stim_index], self.stim_list_delete_buttons[stim_index+1] = self.stim_list_delete_buttons[stim_index+1], self.stim_list_delete_buttons[stim_index]
 
-			# update config params
-			self.controller.config_params['stim_list'][stim_index], self.controller.config_params['stim_list'][stim_index+1] = self.controller.config_params['stim_list'][stim_index+1], self.controller.config_params['stim_list'][stim_index]
-			self.controller.config_params['durations_list'][stim_index], self.controller.config_params['durations_list'][stim_index+1] = self.controller.config_params['durations_list'][stim_index+1], self.controller.config_params['durations_list'][stim_index]
-			self.controller.config_params['types_list'][stim_index], self.controller.config_params['types_list'][stim_index+1] = self.controller.config_params['types_list'][stim_index+1], self.controller.config_params['types_list'][stim_index]
-			self.controller.config_params['parameters_list'][stim_index], self.controller.config_params['parameters_list'][stim_index+1] = self.controller.config_params['parameters_list'][stim_index+1], self.controller.config_params['parameters_list'][stim_index]
+				# update config params
+				self.controller.config_params['stim_list'][stim_index], self.controller.config_params['stim_list'][stim_index+1] = self.controller.config_params['stim_list'][stim_index+1], self.controller.config_params['stim_list'][stim_index]
+				self.controller.config_params['durations_list'][stim_index], self.controller.config_params['durations_list'][stim_index+1] = self.controller.config_params['durations_list'][stim_index+1], self.controller.config_params['durations_list'][stim_index]
+				self.controller.config_params['types_list'][stim_index], self.controller.config_params['types_list'][stim_index+1] = self.controller.config_params['types_list'][stim_index+1], self.controller.config_params['types_list'][stim_index]
+				self.controller.config_params['parameters_list'][stim_index], self.controller.config_params['parameters_list'][stim_index+1] = self.controller.config_params['parameters_list'][stim_index+1], self.controller.config_params['parameters_list'][stim_index]
+
+				# update stim window's params
+				if self.controller.stim_window:
+					self.controller.stim_window.update_params()
+
+	def remove_stim(self, sender, event):
+		if len(self.controller.config_params['stim_list']) > 1:
+			# stop any running stim
+			self.controller.stop_stim(ignore_troubleshooting=True)
+
+			# stop the param window from refreshing
+			self.SuspendLayout()
+
+			# get stim index
+			stim_index = sender.Parent.Tag
+
+			# remove stim
+			self.stim_list_panel.Controls.RemoveAt(stim_index)
+			del self.stim_list_subpanels[stim_index]
+			del self.stim_list_duration_labels[stim_index]
+			del self.stim_list_name_labels[stim_index]
+			del self.stim_list_type_labels[stim_index]
+			del self.stim_list_edit_buttons[stim_index]
+			del self.stim_list_delete_buttons[stim_index]
+
+			# adjust indices of remaining stims
+			for i in range(stim_index, len(self.stim_list_subpanels)):
+				self.stim_list_subpanels[i].Tag -= 1
+
+			# remove stim from experiment params
+			del self.controller.config_params['stim_list'][stim_index]
+			del self.controller.config_params['durations_list'][stim_index]
+			del self.controller.config_params['types_list'][stim_index]
+			del self.controller.config_params['parameters_list'][stim_index]
 
 			# update stim window's params
 			if self.controller.stim_window:
 				self.controller.stim_window.update_params()
 
-	def remove_stim(self, sender, event):
-		# stop any running stim
-		self.controller.stop_stim(ignore_troubleshooting=True)
-
-		# stop the param window from refreshing
-		self.SuspendLayout()
-
-		# get stim index
-		stim_index = sender.Parent.Tag
-
-		# remove stim
-		self.stim_list_panel.Controls.RemoveAt(stim_index)
-		del self.stim_list_subpanels[stim_index]
-		del self.stim_list_duration_labels[stim_index]
-		del self.stim_list_name_labels[stim_index]
-		del self.stim_list_type_labels[stim_index]
-		del self.stim_list_edit_buttons[stim_index]
-		del self.stim_list_delete_buttons[stim_index]
-
-		# adjust indices of remaining stims
-		for i in range(stim_index, len(self.stim_list_subpanels)):
-			self.stim_list_subpanels[i].Tag -= 1
-
-		# remove stim from experiment params
-		del self.controller.config_params['stim_list'][stim_index]
-		del self.controller.config_params['durations_list'][stim_index]
-		del self.controller.config_params['types_list'][stim_index]
-		del self.controller.config_params['parameters_list'][stim_index]
-
-		# update stim window's params
-		if self.controller.stim_window:
-			self.controller.stim_window.update_params()
-
-		# allow the param window to refresh
-		self.ResumeLayout()
+			# allow the param window to refresh
+			self.ResumeLayout()
 
 	def edit_stim(self, sender, event):
 		# stop any running stim
