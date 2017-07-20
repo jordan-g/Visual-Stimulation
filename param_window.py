@@ -199,7 +199,7 @@ class ParamWindow(Form):
 
 	def remove_experiment(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# remove experiment from experiments dict
 		success = self.controller.remove_experiment(self.exp_chooser.SelectedItem.ToString())
@@ -458,7 +458,7 @@ class ParamWindow(Form):
 
 	def add_new_config(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# get new config name
 		new_config_name = self.config_name_dialog.ShowDialog(self.controller, "Add New Config", "New config name:", "New Config", None)
@@ -489,7 +489,7 @@ class ParamWindow(Form):
 
 	def remove_config(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# remove config from configs dict
 		success = self.controller.remove_config(self.config_chooser.SelectedItem.ToString())
@@ -675,7 +675,7 @@ class ParamWindow(Form):
 
 	def move_up_stim(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# get stim index
 		stim_index = sender.Parent.Tag
@@ -708,7 +708,7 @@ class ParamWindow(Form):
 
 	def move_down_stim(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# get stim index
 		stim_index = sender.Parent.Tag
@@ -741,7 +741,7 @@ class ParamWindow(Form):
 
 	def remove_stim(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# stop the param window from refreshing
 		self.SuspendLayout()
@@ -777,7 +777,7 @@ class ParamWindow(Form):
 
 	def edit_stim(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# stop the param window from refreshing
 		self.SuspendLayout()
@@ -867,7 +867,7 @@ class ParamWindow(Form):
 
 	def add_stim(self, sender, event):
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 
 		# show stim dialog
 		success = self.stim_dialog.ShowDialog(self.controller, None)
@@ -886,7 +886,7 @@ class ParamWindow(Form):
 		print("ParamWindow: Saving experiment params.")
 
 		# stop any running stim
-		self.controller.stop_stim()
+		self.controller.stop_stim(ignore_troubleshooting=True)
 		
 		# get contents of param textboxes
 		self.exp_param_values         = {key: value.Text for (key, value) in self.exp_param_textboxes.items()}

@@ -209,9 +209,6 @@ class StimWindow(GameWindow):
 
                     self.MakeCurrent()
 
-                    # set the viewport
-                    GL.Viewport(self.x_offset, self.y_offset, self.px_width, self.px_height)
-
                     # clear buffers
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit)
 
@@ -221,6 +218,9 @@ class StimWindow(GameWindow):
 
                     # swap buffers
                     self.SwapBuffers()
+
+                    # set the viewport
+                    GL.Viewport(self.x_offset, self.y_offset, self.px_width, self.px_height)
 
 class LoomingDot():
     def __init__(self, stim):
@@ -348,16 +348,6 @@ class MovingDot():
         self.x = self.x_init
         self.y = self.y_init
 
-       # self.v_x_init   = math.tan(math.radians(params['v_x']))*self.distance*self.resolution/1000.0 # px/ms
-       # self.v_x        = self.v_x_init
-       # self.v_y_init   = math.tan(math.radians(params['v_y']))*self.distance*self.resolution/1000.0 # px/ms
-       # self.v_y        = self.v_y_init
-       # self.max_v_init = max(abs(self.v_x_init), abs(self.v_y_init))
-
-       # self.base_v_x = random.uniform(0, 10000)
-       # self.base_v_y = random.uniform(10000, 20000)
-       # self.octaves = 16
-
         self.v_x = math.tan(math.radians(params['v_x']))*self.distance*self.resolution/((self.window_width/2)*1000.0)
         self.v_y = math.tan(math.radians(params['v_y']))*self.distance*self.resolution/((self.window_height/2)*1000.0)
 
@@ -369,25 +359,6 @@ class MovingDot():
         self.radius_y = self.radius/(self.window_height/2.0)
 
     def update_func(self, elapsed_time):
-##        if time == self.t_last_movement:
-##            self.time_to_movement = math.random.expovariate(1/0.01)
-##
-##        if time <= self.t_last_movement + 1000:       ## would elif be more appropriate here? could else be used to catch exceptions
-##            self.t_last_movement = time
-##
-##            self.v_x_noise = pnoise1(self.t_slow_x/500.0 + self.base_v_x, self.octaves, persistence=0.01, repeat=int(self.duration))*2.0
-##            self.v_y_noise = pnoise1(self.t_slow_y/100.0 + self.base_v_y, self.octaves, persistence=0.01, repeat=int(self.duration))*2.0
-##
-##            self.t_slow_x += 2
-##            self.t_slow_y += 2
-##
-##            v_x = (0.1 + 0.9*self.v_x_noise)*self.v_x
-##            v_y = (0.5 + 0.5*self.v_y_noise)*self.v_y + 0.0005*self.v_y_noise
-##
-##      # update position
-##            self.x += self.v_x*elapsed_time
-##            self.y += self.v_y*elapsed_time
-
         self.x += self.v_x*elapsed_time
         self.y += self.v_y*elapsed_time
         
@@ -578,12 +549,15 @@ class GratingStim():
         self.distance = distance # cm
         self.duration = duration*1000.0 # ms
 
-        self.frequency = 1.0/(math.tan(math.radians(1.0/params['frequency']))*self.distance*self.resolution) # 1/px
-        self.init_phase = math.tan(math.radians(params['init_phase']))*self.distance*self.resolution # px
-        self.velocity_init = math.tan(math.radians(params['velocity']))*self.distance*self.resolution/1000.0 # px/ms
+        self.rad_width = math.atan2(self.stim_window.px_width/2.0, self.distance)*2
+
+        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width
+        self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width
+        self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width/1000.0
         self.velocity = self.velocity_init
         self.contrast = params['contrast']
         self.brightness = params['brightness']
+        self.angle = params['angle']
 
         self.t_init = -self.duration*1000.0 # ms
         self.t = self.t_init
@@ -596,7 +570,7 @@ class GratingStim():
     def genTexture(self):
         # generate the grating texture
         for x in range(self.stim_window.px_width):
-            w = int((self.contrast*math.sin((self.frequency*x + self.phase)*2*math.pi) + 1.0)*255.0*self.brightness/2.0)
+            w = int(round((self.contrast*math.sin(self.frequency*x*2*math.pi - self.phase*self.frequency*2*math.pi) + 1.0)*self.brightness*255.0/2.0))
             self.grating[4*x] = Byte(w)
             self.grating[4*x+1] = Byte(w)
             self.grating[4*x+2] = Byte(w)
@@ -625,7 +599,8 @@ class GratingStim():
 
     def update_func(self, elapsed_time):
         # update phase
-        self.phase += -self.velocity*elapsed_time
+        self.phase += self.velocity*elapsed_time
+        self.t += elapsed_time
 
         # set redraw bool
         self.redraw = True
@@ -653,17 +628,23 @@ class GratingStim():
         # enable texture mode
         GL.Enable(EnableCap.Texture2D)
 
+        GL.PushMatrix()
+        GL.Translate(self.stim_window.px_width/2, self.stim_window.px_height/2, 0)
+        GL.Rotate(self.angle, 0, 0, 1)
+
         # draw texture quad
         GL.Begin(BeginMode.Quads)
         GL.TexCoord2(1.0, 1.0)
         GL.Vertex2(self.stim_window.px_width, self.stim_window.px_height)
         GL.TexCoord2(0, 1.0)
-        GL.Vertex2(0.0, self.stim_window.px_height)
+        GL.Vertex2(-self.stim_window.px_width, self.stim_window.px_height)
         GL.TexCoord2(0, 0)
-        GL.Vertex2(0, 0)
+        GL.Vertex2(-self.stim_window.px_width, -self.stim_window.px_height)
         GL.TexCoord2(1.0, 0)
-        GL.Vertex2(self.stim_window.px_width, 0)
+        GL.Vertex2(self.stim_window.px_width, -self.stim_window.px_height)
         GL.End()
+
+        GL.PopMatrix()
 
         # disable texture mode
         GL.Disable(EnableCap.Texture2D)

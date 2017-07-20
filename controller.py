@@ -13,6 +13,7 @@ from shared import *
 class StimController():
     def __init__(self):
         print("Controller: Initializing.")
+        self.timer_thread = None
 
         self.running_stim = False # whether the stimulation is running
         self.begin_stim   = False # whether the stimulation needs to begin
@@ -165,6 +166,9 @@ class StimController():
         self.experiment_params['x_offset']        = new_params['x_offset']
         self.experiment_params['y_offset']        = new_params['y_offset']
 
+        # calculate resolution param
+        self.experiment_params['resolution'] = self.experiment_params['screen_px_width']/self.experiment_params['screen_cm_width']
+
     def load_config_params(self):
         print("Controller: Loading config params for {}.".format(self.configs['current_config']))
 
@@ -267,7 +271,9 @@ class StimController():
         if ignore_troubleshooting or not self.troubleshooting:
             print("Controller: Stopping stim.")
 
-            self.timer_thread.running = False
+            if self.timer_thread:
+                self.timer_thread.running = False
+            self.timer_thread = None
             self.param_window.progress_label.Text = ""
 
             self.begin_stim   = False
@@ -443,7 +449,7 @@ class StimController():
             stim_parameters = DEFAULT_LOOMING_DOT_PARAMS
         elif stim_type == "Moving Dot":
             stim_parameters = DEFAULT_MOVING_DOT_PARAMS
-        elif stim_type == "Combined Dots":     ##Should give initial params?
+        elif stim_type == "Combined Dots":
             stim_parameters = DEFAULT_COMBINED_DOTS_PARAMS
         # elif stim_type == "Multiple Moving Dots":     ##Should give initial params?
         #   stim_parameters = {'dot_params': [{'radius': 10.0,     ##moving dot from here
@@ -508,8 +514,8 @@ class Timer(threading.Thread):
 
         while self.running:
             curr_time = time.time() - self.stim_start_time
-            minutes   = int(curr_time // 3600)
-            seconds   = int(curr_time % 3600)
+            minutes   = int(curr_time // 60)
+            seconds   = int(curr_time % 60)
             stim_name = self.controller.stim_window.stim_type
             self.progress_label.Text = "{0:02d}:{1:02d} - {2}".format(minutes, seconds, stim_name)
 

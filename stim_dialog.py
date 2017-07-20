@@ -148,6 +148,7 @@ class StimDialog():
         self.name_textbox.Parent = self.stim_param_panel
         self.name_textbox.Text = str(self.stim_name)
         self.name_textbox.AutoSize = True
+        self.name_textbox.Width = 300
         self.name_textbox.BackColor = BUTTON_PANEL_COLOR
         self.name_textbox.Font = Font(BODY_FONT.FontFamily, 18)
 
@@ -157,6 +158,7 @@ class StimDialog():
         self.duration_textbox.Parent = self.stim_param_panel
         self.duration_textbox.Text = str(self.stim_duration)
         self.duration_textbox.AutoSize = True
+        self.duration_textbox.Width = 300
         self.duration_textbox.BackColor = BUTTON_PANEL_COLOR
         self.duration_textbox.Font = Font(BODY_FONT.FontFamily, 18)
 
@@ -201,6 +203,8 @@ class StimDialog():
             self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
             self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
             self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
+            self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
+            self.add_stim_param_to_window('angle', 'Angle')
         elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
             pass
 
@@ -213,6 +217,7 @@ class StimDialog():
         self.stim_param_textboxes[name].Parent = self.stim_param_panel
         self.stim_param_textboxes[name].Text = str(self.stim_parameters[name])
         self.stim_param_textboxes[name].AutoSize = True
+        self.stim_param_textboxes[name].Width = 300
         self.stim_param_textboxes[name].BackColor = TEXTBOX_COLOR
         self.stim_param_textboxes[name].Font = Font(BODY_FONT.FontFamily, 18)
 
@@ -358,7 +363,8 @@ class StimDialog():
             stim_params_are_valid = (is_positive_number(stim_params['frequency'])
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])
-                                     and is_number_between_0_and_1(stim_params['contrast']))
+                                     and is_number_between_0_and_1(stim_params['contrast'])
+                                     and is_number(stim_params['angle']))
         elif stim_type in ("Delay", "Black Flash", "White Flash"):
             stim_params_are_valid = True
 
