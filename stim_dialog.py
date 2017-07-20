@@ -8,6 +8,8 @@ from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, Trac
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
+from confirmation_dialog import ConfirmationDialog
+
 # import shared constants & helper functions
 from shared import *
 
@@ -26,6 +28,9 @@ class StimDialog():
 
         # initialize invalid params label
         self.invalid_params_label = None
+
+        # create confirmation dialog
+        self.confirmation_dialog = ConfirmationDialog()
 
         # create a dictionary to save stim parameters for different stim types
         # as the user changes parameters & types of stimuli in this dialog.
@@ -279,18 +284,24 @@ class StimDialog():
         # add close button
         self.close_button = Button()
         self.close_button.Parent = self.save_button_panel
-        self.close_button.Text = "Close"
+        self.close_button.Text = "Cancel"
         self.close_button.DialogResult = DialogResult.Cancel
         self.close_button.BackColor = BUTTON_COLOR
         self.close_button.AutoSize = True
 
     def on_save_button_click(self, sender, event):
-        # save stim params
-        self.success = self.save_stim_params(sender, event)
+        if self.controller.running_stim:
+            confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Saving these settings will stop the currently-running stimulation. Continue?")
+        else:
+            confirmation = True
 
-        if self.success:
-            # saving was successful; close the window
-            self.dialog_window.Close()
+        if confirmation:
+            # save stim params
+            self.success = self.save_stim_params(sender, event)
+
+            if self.success:
+                # saving was successful; close the window
+                self.dialog_window.Close()
 
     def save_stim_params(self, sender, event):
         # stop any running stim

@@ -549,7 +549,7 @@ class GratingStim():
         self.distance = distance # cm
         self.duration = duration*1000.0 # ms
 
-        self.rad_width = math.atan2(self.stim_window.px_width/2.0, self.distance)*2
+        self.rad_width = math.atan2(self.stim_window.px_width/2.0, self.distance*self.resolution)*2
 
         self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width
         self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width
