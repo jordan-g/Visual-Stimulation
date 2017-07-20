@@ -13,6 +13,9 @@ from shared import *
 class StimController():
     def __init__(self):
         print("Controller: Initializing.")
+
+        self.base_path = os.path.dirname(__file__)
+
         self.timer_thread = None
 
         self.running_stim = False # whether the stimulation is running
@@ -52,7 +55,7 @@ class StimController():
         self.running_stim = False
 
         # sete xperiments file
-        self.experiments_file = "experiments.json"
+        self.experiments_file = os.path.join(self.base_path, "experiments.json")
 
         try:
             # load experiments
@@ -80,7 +83,7 @@ class StimController():
         self.running_stim = False
 
         # set path to current experiment
-        self.current_experiment_folder = self.experiments['current_experiment']
+        self.current_experiment_folder = os.path.join(self.base_path, self.experiments['current_experiment'])
 
         # set configs file
         self.configs_file = "configs.json"
@@ -114,7 +117,7 @@ class StimController():
         self.running_stim = False
 
         # set experiment folder
-        self.current_experiment_folder = self.experiments['current_experiment']
+        self.current_experiment_folder = os.path.join(self.base_path, self.experiments['current_experiment'])
 
         # create a folder if necessary
         if not os.path.exists(self.current_experiment_folder):
@@ -335,7 +338,7 @@ class StimController():
 
         try:
             # delete folder that corresponds to the experiment
-            shutil.rmtree(experiment_name)
+            shutil.rmtree(os.path.join(self.base_path, experiment_name))
         except:
             return False
 
