@@ -71,6 +71,8 @@ DEFAULT_GRATING_PARAMS = {'frequency': 1,
                           'velocity': 0.02,
                           'contrast': 1.0}
 
+##!!Set default params for OKR
+
 # set default duration for new stims
 DEFAULT_STIM_DURATION = 10
 
@@ -116,6 +118,7 @@ def stim_color(stim_type):
         color = MOVING_DOT_COLOR
     elif stim_type == "Grating":
         color = GRATING_COLOR
+    ##!! Add color for the OKR, can also do the same for combined stim, not absolutely necessary though
     else:
         color = DELAY_COLOR
 

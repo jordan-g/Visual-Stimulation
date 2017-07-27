@@ -111,7 +111,7 @@ class StimDialog():
         self.stim_chooser = ComboBox()
         self.stim_chooser.DropDownStyle = ComboBoxStyle.DropDownList
         self.stim_chooser.Parent = self.stim_choice_panel
-        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Grating", "Delay", "Black Flash", "White Flash"))
+        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Grating", "Delay", "Black Flash", "White Flash"))  ##!! need to add option for OKR here
         self.stim_chooser.SelectionChangeCommitted += self.on_stim_choice
         self.stim_chooser.Text = self.stim_type
         self.stim_chooser.Width = self.dialog_window.Width - 40
@@ -201,6 +201,7 @@ class StimDialog():
             self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
             self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
             self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
+        ##!!Need a self.stim_type for OKR
         elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
             pass
 
@@ -359,6 +360,7 @@ class StimDialog():
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])
                                      and is_number_between_0_and_1(stim_params['contrast']))
+        ##!! check valid params for OKR
         elif stim_type in ("Delay", "Black Flash", "White Flash"):
             stim_params_are_valid = True
 

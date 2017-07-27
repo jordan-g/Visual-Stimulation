@@ -94,6 +94,7 @@ class StimWindow(GameWindow):
     def change_param(self, param_dimension, change_in_param):
         if self.stim_type == "Grating":
             self.stim.change_velocity(change_in_param)
+        ##!! change param for self.stim_type to OKR or use grating
         elif self.stim_type == "Moving Dot":
             if param_dimension == "x":
                 self.stim.change_v_x(change_in_param)
@@ -132,6 +133,7 @@ class StimWindow(GameWindow):
                 self.stim = WhiteFlashStim(self)
             elif self.stim_type == "Combined Dots":
                 self.stim = CombinedDotStim(self)
+            ##!! add a stim type for OKR 
         else:
             self.stim = None
 
@@ -231,14 +233,14 @@ class LoomingDot():
         self.distance   = distance # cm
         self.window_width = window_width
         self.window_height = window_height
-        self.max_radius = self.window_width*4 ## Why does this have a self. is it because it references line 228? does the .self mean it looks in this class?
+        self.max_radius = self.window_width*4 
 
         self.x        = math.tan(math.radians(params['looming_dot_init_x_pos']))*self.distance*self.resolution/(self.window_width/2)
         self.y        = math.tan(math.radians(params['looming_dot_init_y_pos']))*self.distance*self.resolution/(self.window_height/2)
         self.l_v      = params['l_v']
         self.brightness = params['looming_dot_brightness']
 
-        self.A = self.distance*self.resolution*-self.l_v ## What is self.A?
+        self.A = self.distance*self.resolution*-self.l_v 
 
         self.radius_init = 1 # initial radius
         self.radius = self.radius_init
@@ -666,6 +668,8 @@ class GratingStim():
 
         # disable texture mode
         GL.Disable(EnableCap.Texture2D)
+
+##!!Need class OKR
 
 class DelayStim():
     def __init__(self, stim_window):
