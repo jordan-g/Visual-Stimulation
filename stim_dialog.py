@@ -8,6 +8,8 @@ from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, Trac
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
+from confirmation_dialog import ConfirmationDialog
+
 # import shared constants & helper functions
 from shared import *
 
@@ -26,6 +28,9 @@ class StimDialog():
 
         # initialize invalid params label
         self.invalid_params_label = None
+
+        # create confirmation dialog
+        self.confirmation_dialog = ConfirmationDialog()
 
         # create a dictionary to save stim parameters for different stim types
         # as the user changes parameters & types of stimuli in this dialog.
@@ -148,6 +153,7 @@ class StimDialog():
         self.name_textbox.Parent = self.stim_param_panel
         self.name_textbox.Text = str(self.stim_name)
         self.name_textbox.AutoSize = True
+        self.name_textbox.Width = 300
         self.name_textbox.BackColor = BUTTON_PANEL_COLOR
         self.name_textbox.Font = Font(BODY_FONT.FontFamily, 18)
 
@@ -157,6 +163,7 @@ class StimDialog():
         self.duration_textbox.Parent = self.stim_param_panel
         self.duration_textbox.Text = str(self.stim_duration)
         self.duration_textbox.AutoSize = True
+        self.duration_textbox.Width = 300
         self.duration_textbox.BackColor = BUTTON_PANEL_COLOR
         self.duration_textbox.Font = Font(BODY_FONT.FontFamily, 18)
 
@@ -201,7 +208,12 @@ class StimDialog():
             self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
             self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
             self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
+##<<<<<<< HEAD
         ##!!Need a self.stim_type for OKR
+##=======
+            self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
+            self.add_stim_param_to_window('angle', 'Angle')
+##>>>>>>> 3b3df4ee4b15309985b30c7ec22ec523706cf37c
         elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
             pass
 
@@ -214,6 +226,7 @@ class StimDialog():
         self.stim_param_textboxes[name].Parent = self.stim_param_panel
         self.stim_param_textboxes[name].Text = str(self.stim_parameters[name])
         self.stim_param_textboxes[name].AutoSize = True
+        self.stim_param_textboxes[name].Width = 300
         self.stim_param_textboxes[name].BackColor = TEXTBOX_COLOR
         self.stim_param_textboxes[name].Font = Font(BODY_FONT.FontFamily, 18)
 
@@ -275,18 +288,24 @@ class StimDialog():
         # add close button
         self.close_button = Button()
         self.close_button.Parent = self.save_button_panel
-        self.close_button.Text = "Close"
+        self.close_button.Text = "Cancel"
         self.close_button.DialogResult = DialogResult.Cancel
         self.close_button.BackColor = BUTTON_COLOR
         self.close_button.AutoSize = True
 
     def on_save_button_click(self, sender, event):
-        # save stim params
-        self.success = self.save_stim_params(sender, event)
+        if self.controller.running_stim:
+            confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Saving these settings will stop the currently-running stimulation. Continue?")
+        else:
+            confirmation = True
 
-        if self.success:
-            # saving was successful; close the window
-            self.dialog_window.Close()
+        if confirmation:
+            # save stim params
+            self.success = self.save_stim_params(sender, event)
+
+            if self.success:
+                # saving was successful; close the window
+                self.dialog_window.Close()
 
     def save_stim_params(self, sender, event):
         # stop any running stim
@@ -359,7 +378,8 @@ class StimDialog():
             stim_params_are_valid = (is_positive_number(stim_params['frequency'])
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])
-                                     and is_number_between_0_and_1(stim_params['contrast']))
+                                     and is_number_between_0_and_1(stim_params['contrast'])
+                                     and is_number(stim_params['angle']))
         ##!! check valid params for OKR
         elif stim_type in ("Delay", "Black Flash", "White Flash"):
             stim_params_are_valid = True

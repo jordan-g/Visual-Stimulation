@@ -14,6 +14,12 @@ class StimController():
     def __init__(self):
         print("Controller: Initializing.")
 
+        self.base_path = os.path.dirname(__file__)
+
+        self.display_index = 1
+
+        self.timer_thread = None
+
         self.running_stim = False # whether the stimulation is running
         self.begin_stim   = False # whether the stimulation needs to begin
 
@@ -51,7 +57,7 @@ class StimController():
         self.running_stim = False
 
         # sete xperiments file
-        self.experiments_file = "experiments.json"
+        self.experiments_file = os.path.join(self.base_path, "experiments.json")
 
         try:
             # load experiments
@@ -79,7 +85,7 @@ class StimController():
         self.running_stim = False
 
         # set path to current experiment
-        self.current_experiment_folder = self.experiments['current_experiment']
+        self.current_experiment_folder = os.path.join(self.base_path, self.experiments['current_experiment'])
 
         # set configs file
         self.configs_file = "configs.json"
@@ -113,7 +119,7 @@ class StimController():
         self.running_stim = False
 
         # set experiment folder
-        self.current_experiment_folder = self.experiments['current_experiment']
+        self.current_experiment_folder = os.path.join(self.base_path, self.experiments['current_experiment'])
 
         # create a folder if necessary
         if not os.path.exists(self.current_experiment_folder):
@@ -165,6 +171,9 @@ class StimController():
         self.experiment_params['x_offset']        = new_params['x_offset']
         self.experiment_params['y_offset']        = new_params['y_offset']
 
+        # calculate resolution param
+        self.experiment_params['resolution'] = self.experiment_params['screen_px_width']/self.experiment_params['screen_cm_width']
+
     def load_config_params(self):
         print("Controller: Loading config params for {}.".format(self.configs['current_config']))
 
@@ -188,13 +197,15 @@ class StimController():
         try:
             # load config params
             with open(self.config_params_path, "r") as input_file:
-            	self.config_params = json.load(input_file)
+                self.config_params = json.load(input_file)
 
             # convert params to floats
             for i, duration in enumerate(self.config_params['durations_list']):
                 self.config_params['durations_list'][i] = float(duration)
 
             for i, params in enumerate(self.config_params['parameters_list']):
+                stim_type = self.config_params['types_list'][i]
+                self.config_params['parameters_list'][i] = self.default_stim_params(stim_type)
                 for key in params:
                     try:
                         self.config_params['parameters_list'][i][key] = float(params[key])
@@ -215,7 +226,7 @@ class StimController():
 
         # save config params to file
         with open(self.config_params_path, "w") as output_file:
-        	json.dump(self.config_params, output_file)
+            json.dump(self.config_params, output_file)
 
     def create_param_window(self):
         print("Controller: Creating param window.")
@@ -237,17 +248,21 @@ class StimController():
         self.stim_window = StimWindow(self)
 
         # run stim window @ 60fps
-        self.stim_window.Run(60)
+        try:
+            self.stim_window.Run(60)
+        except:
+            pass
 
-        self.stim_window.stim = None
+        # if self.stim_window is not None:
+        # self.stim_window.stim = None
 
-        self.stim_window.Dispose()
+        # self.stim_window.Dispose()
 
-        print("Controller: Finished running stim window.")
+        # print("Controller: Finished running stim window.")
 
-        self.stim_window = None
+        # self.stim_window = None
 
-        self.close_windows()
+        # self.close_windows()
 
     def start_stim(self, ignore_troubleshooting=False):
         if ignore_troubleshooting or not self.troubleshooting:
@@ -265,7 +280,9 @@ class StimController():
         if ignore_troubleshooting or not self.troubleshooting:
             print("Controller: Stopping stim.")
 
-            self.timer_thread.running = False
+            if self.timer_thread:
+                self.timer_thread.running = False
+            self.timer_thread = None
             self.param_window.progress_label.Text = ""
 
             self.begin_stim   = False
@@ -327,7 +344,7 @@ class StimController():
 
         try:
             # delete folder that corresponds to the experiment
-            shutil.rmtree(experiment_name)
+            shutil.rmtree(os.path.join(self.base_path, experiment_name))
         except:
             return False
 
@@ -441,7 +458,7 @@ class StimController():
             stim_parameters = DEFAULT_LOOMING_DOT_PARAMS
         elif stim_type == "Moving Dot":
             stim_parameters = DEFAULT_MOVING_DOT_PARAMS
-        elif stim_type == "Combined Dots":     ##Should give initial params?
+        elif stim_type == "Combined Dots":
             stim_parameters = DEFAULT_COMBINED_DOTS_PARAMS
         # elif stim_type == "Multiple Moving Dots":     ##Should give initial params?
         #   stim_parameters = {'dot_params': [{'radius': 10.0,     ##moving dot from here
@@ -476,6 +493,22 @@ class StimController():
         else:
             print("Troubleshooting mode disabled.")
 
+    def restart_stim_window(self, display_index):
+        self.display_index = display_index
+
+        print(self.display_index)
+
+        if self.stim_window:
+            self.stim_window.Dispose()
+
+        self.stim_window = None
+
+        self.stim_thread.join()
+
+        # start thread for stim window
+        self.stim_thread  = threading.Thread(target=self.create_stim_window)
+        self.stim_thread.start()
+
     def close_windows(self):
         print("Controller: Closing windows.")
 
@@ -506,8 +539,8 @@ class Timer(threading.Thread):
 
         while self.running:
             curr_time = time.time() - self.stim_start_time
-            minutes   = int(curr_time // 3600)
-            seconds   = int(curr_time % 3600)
+            minutes   = int(curr_time // 60)
+            seconds   = int(curr_time % 60)
             stim_name = self.controller.stim_window.stim_type
             self.progress_label.Text = "{0:02d}:{1:02d} - {2}".format(minutes, seconds, stim_name)
 
