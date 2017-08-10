@@ -65,6 +65,16 @@ DEFAULT_COMBINED_DOTS_PARAMS = {'radius': 10.0,
                                 'looming_dot_brightness': 1.0,
                                 'background_brightness': 0}
 
+# set default params for OMR stim
+#can I use init_phase for phase? does x just signify distance from converging line?
+DEFAULT_OPTOMOTOR_GRATING_PARAMS = {'frequency': 0.2,
+                          'init_phase': 0.0,
+                          'merging_pos': 0.0, 
+                          'velocity': 5,
+                          'contrast': 1.0,
+                          'brightness': 1.0,
+                          'angle': 0,}
+
 # set default params for grating stim
 DEFAULT_GRATING_PARAMS = {'frequency': 0.2,
                           'init_phase': 0.0,

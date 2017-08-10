@@ -116,7 +116,7 @@ class StimDialog():
         self.stim_chooser = ComboBox()
         self.stim_chooser.DropDownStyle = ComboBoxStyle.DropDownList
         self.stim_chooser.Parent = self.stim_choice_panel
-        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Grating", "Delay", "Black Flash", "White Flash"))  ##!! need to add option for OKR here
+        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Optomotor Grating", "Grating", "Delay", "Black Flash", "White Flash"))  ##!! need to add option for OKR here
         self.stim_chooser.SelectionChangeCommitted += self.on_stim_choice
         self.stim_chooser.Text = self.stim_type
         self.stim_chooser.Width = self.dialog_window.Width - 40
@@ -203,17 +203,21 @@ class StimDialog():
             self.add_stim_param_to_window('v_y', 'Vertical velocity (deg/s)')
             self.add_stim_param_to_window('moving_dot_brightness', 'Contrast (0 - 1)')
             self.add_stim_param_to_window('background_brightness', 'Background brightness (0-1)')
+        elif self.stim_type == "Optomotor Grating":
+            self.add_stim_param_to_window('frequency', 'Spatial frequency (1/deg)')
+            self.add_stim_param_to_window('merging_pos', 'Converging position (x)')#will need to do something to get x
+            self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
+            self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
+            self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
+            self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
+            self.add_stim_param_to_window('angle', 'Angle')
         elif self.stim_type == "Grating":
             self.add_stim_param_to_window('frequency', 'Spatial frequency (1/deg)')
             self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
             self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
             self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
-##<<<<<<< HEAD
-        ##!!Need a self.stim_type for OKR
-##=======
             self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
             self.add_stim_param_to_window('angle', 'Angle')
-##>>>>>>> 3b3df4ee4b15309985b30c7ec22ec523706cf37c
         elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
             pass
 
@@ -363,24 +367,30 @@ class StimDialog():
                                      and is_number_between_0_and_1(stim_params['moving_dot_brightness'])
                                      and is_number_between_0_and_1(stim_params['background_brightness']))
         elif stim_type == "Combined Dots":
-            stim_params_are_valid = (is_nonnegative_number(stim_params['radius'])## moving dot from here
+            stim_params_are_valid = (is_nonnegative_number(stim_params['radius'])
                                      and is_number(stim_params['moving_dot_init_x_pos'])
                                      and is_number(stim_params['moving_dot_init_y_pos'])
                                      and is_number(stim_params['v_x'])
                                      and is_number(stim_params['v_y'])
-                                     and is_number_between_0_and_1(stim_params['moving_dot_brightness']) ## moving dot to here
-                                     and is_number(stim_params['looming_dot_init_x_pos']) ## Looming dot from here
+                                     and is_number_between_0_and_1(stim_params['moving_dot_brightness']) 
+                                     and is_number(stim_params['looming_dot_init_x_pos']) 
                                      and is_number(stim_params['looming_dot_init_y_pos'])
                                      and is_positive_number(stim_params['l_v'])
                                      and is_number_between_0_and_1(stim_params['looming_dot_brightness'])
-                                     and is_number_between_0_and_1(stim_params['background_brightness']))  ## Loming dot to here                                     
+                                     and is_number_between_0_and_1(stim_params['background_brightness']))                                    
+        elif stim_type == "Optomotor Grating":
+            stim_params_are_valid = (is_positive_number(stim_params['frequency'])
+                                     and is_nonnegative_number(stim_params['merging_pos'])
+                                     and is_number(stim_params['init_phase'])
+                                     and is_number(stim_params['velocity'])
+                                     and is_number_between_0_and_1(stim_params['contrast'])
+                                     and is_number(stim_params['angle']))
         elif stim_type == "Grating":
             stim_params_are_valid = (is_positive_number(stim_params['frequency'])
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])
                                      and is_number_between_0_and_1(stim_params['contrast'])
                                      and is_number(stim_params['angle']))
-        ##!! check valid params for OKR
         elif stim_type in ("Delay", "Black Flash", "White Flash"):
             stim_params_are_valid = True
 

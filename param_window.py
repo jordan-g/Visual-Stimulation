@@ -829,6 +829,8 @@ class ParamWindow(Form):
         # show stim dialog
         success = self.stim_dialog.ShowDialog(self.controller, stim_index)
 
+        print(success)
+
         if success:
             self.controller.stop_stim(ignore_troubleshooting=True)
 

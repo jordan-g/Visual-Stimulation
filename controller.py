@@ -460,6 +460,8 @@ class StimController():
             stim_parameters = DEFAULT_MOVING_DOT_PARAMS
         elif stim_type == "Combined Dots":
             stim_parameters = DEFAULT_COMBINED_DOTS_PARAMS
+        elif stim_type == "Optomotor Grating":
+            stim_parameters = DEFAULT_OPTOMOTOR_GRATING_PARAMS
         # elif stim_type == "Multiple Moving Dots":     ##Should give initial params?
         #   stim_parameters = {'dot_params': [{'radius': 10.0,     ##moving dot from here
         #                                           'moving_dot_init_x_pos': 0.0,

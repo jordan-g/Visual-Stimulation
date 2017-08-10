@@ -136,7 +136,8 @@ class StimWindow(GameWindow):
                 self.stim = WhiteFlashStim(self)
             elif self.stim_type == "Combined Dots":
                 self.stim = CombinedDotStim(self)
-            ##!! add a stim type for OKR 
+            elif self.stim_type == "Optomotor Grating":    ##!! add a stim type for OKR
+                self.stim = OptomotorGratingStim(self)
         else:
             self.stim = None
 
@@ -657,6 +658,138 @@ class GratingStim():
         GL.Disable(EnableCap.Texture2D)
 
 ##!!Need class OKR
+class OptomotorGratingStim():
+    #taken from GratingStim in swim_window.py
+    def __init__(self, stim_window):
+        self.stim_window = stim_window
+
+        # get parameters
+        distance = self.stim_window.distance
+        resolution = self.stim_window.resolution
+        duration = self.stim_window.duration
+        params = self.stim_window.params
+
+        # update parameters
+        self.update_params(distance, resolution, duration, params)
+
+    def update_params(self, distance, resolution, duration, params):
+        print("OptomotorStim: Updating parameters.")
+
+        self.redraw = False
+
+        self.resolution = resolution # px/cm
+        self.distance = distance # cm
+        self.duration = duration*1000.0 # ms
+
+        self.rad_width = math.atan2(self.stim_window.px_width/2.0, self.distance*self.resolution)*2
+
+        print("rad width", self.rad_width)
+
+        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width
+        self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width
+        self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width/1000.0
+        self.velocity = self.velocity_init
+        self.contrast = params['contrast']
+        self.brightness = params['brightness']
+        self.angle = params['angle']
+        self.merging_pos = params['merging_pos']
+        self.merging_pos_deg = self.merging_pos*self.rad_width/self.stim_window.px_width
+
+        print(self.stim_window.px_width)
+
+        self.t_init = -self.duration*1000.0 # ms
+        self.t = self.t_init
+
+        self.phase = self.init_phase
+
+        # set redraw bool
+        self.redraw = True
+
+    def genTexture(self):
+        # generate the grating texture
+        for x in range(self.stim_window.px_width):
+            if x >= self.merging_pos:
+                w = (0.5*math.sin((2*self.merging_pos - x)*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
+            else:
+                w = (0.5*math.sin(x*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
+
+            self.grating[4*x] = Byte(w)
+            self.grating[4*x+1] = Byte(w)
+            self.grating[4*x+2] = Byte(w)
+            self.grating[4*x+3] = Byte(255)
+
+    def initTexture(self):
+        # generate the texture
+        self.grating = Array.CreateInstance(Byte, self.stim_window.px_width * 4)
+        self.genTexture()
+
+        # create the texture
+        self.texture = GL.GenTexture()
+        GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
+        GL.TexEnv( TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode,  int(TextureEnvMode.Modulate) )
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
+
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.stim_window.px_width, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
+
+    def change_velocity(self, change_in_velocity):
+        self.velocity = change_in_velocity*self.velocity_init
+
+    def start_func(self):
+        pass
+
+    def update_func(self, elapsed_time):
+        # update phase
+        self.phase += self.velocity*elapsed_time
+        self.t += elapsed_time
+
+        # set redraw bool
+        self.redraw = True
+
+    def end_func(self):
+        pass
+
+    def render_func(self):
+        GL.LoadIdentity()
+
+        # set projection
+        GL.MatrixMode(MatrixMode.Projection)
+        GL.Ortho(0.0, self.stim_window.px_width, 0.0, self.stim_window.px_height, -1.0, 1.0)
+
+        if self.redraw:
+            # set color
+            GL.Color4(Color.White)
+
+            # redraw the texture
+            self.initTexture()
+
+            # reset redraw bool
+            self.redraw = False
+
+        # enable texture mode
+        GL.Enable(EnableCap.Texture2D)
+
+        GL.PushMatrix()
+        GL.Translate(self.stim_window.px_width/2, self.stim_window.px_height/2, 0)
+        GL.Rotate(self.angle, 0, 0, 1)
+
+        # draw texture quad
+        GL.Begin(BeginMode.Quads)
+        GL.TexCoord2(1.0, 1.0)
+        GL.Vertex2(self.stim_window.px_width, self.stim_window.px_height)
+        GL.TexCoord2(0, 1.0)
+        GL.Vertex2(-self.stim_window.px_width, self.stim_window.px_height)
+        GL.TexCoord2(0, 0)
+        GL.Vertex2(-self.stim_window.px_width, -self.stim_window.px_height)
+        GL.TexCoord2(1.0, 0)
+        GL.Vertex2(self.stim_window.px_width, -self.stim_window.px_height)
+        GL.End()
+
+        GL.PopMatrix()
+
+        # disable texture mode
+        GL.Disable(EnableCap.Texture2D)
 
 class DelayStim():
     def __init__(self, stim_window):
