@@ -218,7 +218,9 @@ class StimDialog():
             self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
             self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
             self.add_stim_param_to_window('angle', 'Angle')
-        elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
+        elif self.stim_type == "White Flash":
+            self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
+        elif self.stim_type in ("Delay", "Black Flash"):
             pass
 
     def add_stim_param_to_window(self, name, label_text):
@@ -391,7 +393,9 @@ class StimDialog():
                                      and is_number(stim_params['velocity'])
                                      and is_number_between_0_and_1(stim_params['contrast'])
                                      and is_number(stim_params['angle']))
-        elif stim_type in ("Delay", "Black Flash", "White Flash"):
+        elif stim_type == "White Flash":
+            stim_params_are_valid = is_number_between_0_and_1(stim_params['brightness'])
+        elif stim_type in ("Delay", "Black Flash"):
             stim_params_are_valid = True
 
         return stim_params_are_valid

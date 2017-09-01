@@ -871,6 +871,8 @@ class WhiteFlashStim():
         duration = self.stim_window.duration
         params = self.stim_window.params
 
+        self.brightness = params['brightness']
+
         # update parameters
         self.update_params(distance, resolution, duration, params)
 
@@ -893,7 +895,7 @@ class WhiteFlashStim():
 
         # draw in the viewport background
         GL.Begin(BeginMode.Quads)
-        GL.Color4(Color.White)
+        GL.Color3(self.brightness, self.brightness, self.brightness)
         GL.Vertex2(-1, -1)
         GL.Vertex2(-1, 1)
         GL.Vertex2(1, 1)

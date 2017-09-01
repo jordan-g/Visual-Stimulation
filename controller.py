@@ -482,7 +482,9 @@ class StimController():
             stim_parameters = DEFAULT_GRATING_PARAMS
         elif stim_type == "Broadband Grating":
             stim_parameters = DEFAULT_BROADBAND_GRATING_PARAMS
-        elif stim_type in ("Delay", "Black Flash", "White Flash"):
+        elif stim_type == "White Flash":
+            stim_parameters = DEFAULT_WHITE_FLASH_PARAMS
+        elif stim_type in ("Delay", "Black Flash"):
             stim_parameters = {}
 
         return stim_parameters

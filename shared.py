@@ -91,6 +91,9 @@ DEFAULT_BROADBAND_GRATING_PARAMS = {'frequency': 1,
                                     'contrast': 1.0,
                                     'angle': 0}
 
+# set default params for white flash stim
+DEFAULT_WHITE_FLASH_PARAMS = {'brightness': 1.0}
+
 ##!!Set default params for OKR
 
 # set default duration for new stims
