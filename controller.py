@@ -1,5 +1,6 @@
 from param_window import ParamWindow
 from stim_window import StimWindow
+from black_projector_window import BlackProjectorWindow
 
 import threading
 import os
@@ -43,6 +44,12 @@ class StimController():
         # initialize param & stim windows
         self.param_window = None
         self.stim_window  = None
+
+        # start threads for param & stim windows
+        self.black_projector_thread = threading.Thread(target=self.create_black_projector_window)
+        self.black_projector_thread.start()
+
+        time.sleep(1)
 
         # start threads for param & stim windows
         self.param_thread = threading.Thread(target=self.create_param_window)
@@ -205,7 +212,7 @@ class StimController():
 
             for i, params in enumerate(self.config_params['parameters_list']):
                 stim_type = self.config_params['types_list'][i]
-                self.config_params['parameters_list'][i] = self.default_stim_params(stim_type)
+                self.config_params['parameters_list'][i] = self.default_stim_params(stim_type).copy()
                 for key in params:
                     try:
                         self.config_params['parameters_list'][i][key] = float(params[key])
@@ -236,16 +243,10 @@ class StimController():
         # run param window
         self.param_window.run()
 
-        print("Controller: Finished running param window.")
-
-        self.param_window = None
-
-        self.close_windows()
-
     def create_stim_window(self):
         print("Controller: Creating stim window.")
 
-        self.stim_window = StimWindow(self)
+        self.stim_window = StimWindow(self, display_index=self.display_index)
 
         # run stim window @ 60fps
         try:
@@ -253,16 +254,16 @@ class StimController():
         except:
             pass
 
-        # if self.stim_window is not None:
-        # self.stim_window.stim = None
+    def create_black_projector_window(self):
+        print("Controller: Creating black projector window.")
 
-        # self.stim_window.Dispose()
+        self.black_projector_window = BlackProjectorWindow(self)
 
-        # print("Controller: Finished running stim window.")
-
-        # self.stim_window = None
-
-        # self.close_windows()
+        # run stim window @ 60fps
+        try:
+            self.black_projector_window.Run(60)
+        except:
+            pass
 
     def start_stim(self, ignore_troubleshooting=False):
         if ignore_troubleshooting or not self.troubleshooting:
@@ -479,6 +480,8 @@ class StimController():
         #                                           'moving_dot_brightness': 1.0}]} ## moving dot to here
         elif stim_type == "Grating":
             stim_parameters = DEFAULT_GRATING_PARAMS
+        elif stim_type == "Broadband Grating":
+            stim_parameters = DEFAULT_BROADBAND_GRATING_PARAMS
         elif stim_type in ("Delay", "Black Flash", "White Flash"):
             stim_parameters = {}
 
@@ -498,8 +501,6 @@ class StimController():
     def restart_stim_window(self, display_index):
         self.display_index = display_index
 
-        print(self.display_index)
-
         if self.stim_window:
             self.stim_window.Dispose()
 
@@ -508,24 +509,31 @@ class StimController():
         self.stim_thread.join()
 
         # start thread for stim window
-        self.stim_thread  = threading.Thread(target=self.create_stim_window)
+        self.stim_thread = threading.Thread(target=self.create_stim_window)
         self.stim_thread.start()
 
     def close_windows(self):
         print("Controller: Closing windows.")
 
         # close param & stim windows
-        if self.param_window:
-            self.param_window.Close()
         if self.stim_window:
             self.stim_window.Exit()
 
+        if self.black_projector_window:
+            self.black_projector_window.Exit()
+
         # close the threads
-        try:
-            self.param_thread.join()
-            self.stim_thread.join()
-        except:
-            pass
+        self.stim_thread.join()
+
+        if self.black_projector_thread:
+            self.black_projector_thread.join()
+
+        self.stim_window            = None
+        self.param_window           = None
+        self.black_projector_window = None
+        self.param_thread           = None
+        self.stim_thread            = None
+        self.black_projector_thread = None
 
         print("Controller: Closed all threads.")
 

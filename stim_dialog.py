@@ -116,12 +116,12 @@ class StimDialog():
         self.stim_chooser = ComboBox()
         self.stim_chooser.DropDownStyle = ComboBoxStyle.DropDownList
         self.stim_chooser.Parent = self.stim_choice_panel
-        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Optomotor Grating", "Grating", "Delay", "Black Flash", "White Flash"))  ##!! need to add option for OKR here
+        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Optomotor Grating", "Grating", "Broadband Grating", "Delay", "Black Flash", "White Flash"))  ##!! need to add option for OKR here
         self.stim_chooser.SelectionChangeCommitted += self.on_stim_choice
         self.stim_chooser.Text = self.stim_type
         self.stim_chooser.Width = self.dialog_window.Width - 40
         self.stim_chooser.AutoSize = True
-        self.stim_chooser.Font = Font(BODY_FONT.FontFamily, 18)
+        self.stim_chooser.Font = BODY_FONT
 
     def add_stim_param_panel(self):
         # create stim param panel
@@ -155,7 +155,7 @@ class StimDialog():
         self.name_textbox.AutoSize = True
         self.name_textbox.Width = 300
         self.name_textbox.BackColor = BUTTON_PANEL_COLOR
-        self.name_textbox.Font = Font(BODY_FONT.FontFamily, 18)
+        self.name_textbox.Font = BODY_FONT
 
         # add duration label & textbox
         add_param_label('Duration (s):', self.stim_param_panel)
@@ -165,7 +165,7 @@ class StimDialog():
         self.duration_textbox.AutoSize = True
         self.duration_textbox.Width = 300
         self.duration_textbox.BackColor = BUTTON_PANEL_COLOR
-        self.duration_textbox.Font = Font(BODY_FONT.FontFamily, 18)
+        self.duration_textbox.Font = BODY_FONT
 
         # add parameters heading label
         if self.stim_type not in ("Delay", "Black Flash", "White Flash"):
@@ -211,7 +211,7 @@ class StimDialog():
             self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
             self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
             self.add_stim_param_to_window('angle', 'Angle')
-        elif self.stim_type == "Grating":
+        elif self.stim_type in ["Grating", "Broadband Grating"]:
             self.add_stim_param_to_window('frequency', 'Spatial frequency (1/deg)')
             self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
             self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
@@ -230,9 +230,9 @@ class StimDialog():
         self.stim_param_textboxes[name].Parent = self.stim_param_panel
         self.stim_param_textboxes[name].Text = str(self.stim_parameters[name])
         self.stim_param_textboxes[name].AutoSize = True
-        self.stim_param_textboxes[name].Width = 300
+        self.stim_param_textboxes[name].Width = 360
         self.stim_param_textboxes[name].BackColor = TEXTBOX_COLOR
-        self.stim_param_textboxes[name].Font = Font(BODY_FONT.FontFamily, 18)
+        self.stim_param_textboxes[name].Font = BODY_FONT
 
     def on_stim_choice(self, sender, event):
         # stop the dialog window from refreshing
@@ -385,7 +385,7 @@ class StimDialog():
                                      and is_number(stim_params['velocity'])
                                      and is_number_between_0_and_1(stim_params['contrast'])
                                      and is_number(stim_params['angle']))
-        elif stim_type == "Grating":
+        elif stim_type in ["Grating", "Broadband Grating"]:
             stim_params_are_valid = (is_positive_number(stim_params['frequency'])
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])

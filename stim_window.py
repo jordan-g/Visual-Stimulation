@@ -25,6 +25,8 @@ class StimWindow(GameWindow):
     def __new__(self, controller, window_name="Stimulus", display_index=1):
         self.controller = controller
 
+        print("Display index: {}.".format(display_index))
+
         if display_index == 1:
             # try to use a second display (projector)
             display = DisplayDevice.GetDisplay(DisplayIndex.Second)
@@ -33,22 +35,22 @@ class StimWindow(GameWindow):
 
         if display == None:
             # fall back to the primary display (monitor)
-            display_width = 1280
-            display_height = 800
+            self.display_width = 1280
+            self.display_height = 800
             window_flag = GameWindowFlags.Default
 
             display = DisplayDevice.GetDisplay(DisplayIndex.Default)
         else:
-            display_width = 1280
-            display_height = 800
+            self.display_width = 1280
+            self.display_height = 800
             window_flag = GameWindowFlags.Fullscreen
 
             # set resolution, bits/pixel, refresh rate
-            display.ChangeResolution(display_width, display_height, 16, 60)
+            display.ChangeResolution(self.display_width, self.display_height, 8, 60)
 
-        return GameWindow.__new__(self, display_width,
-                                        display_height,
-                                        GraphicsMode(16, 24, 0, 4), #  bits/pixel, depth bits, stencil bits, FSAA samples
+        return GameWindow.__new__(self, self.display_width,
+                                        self.display_height,
+                                        GraphicsMode(8, 24, 0, 0), #  bits/pixel, depth bits, stencil bits, FSAA samples
                                         window_name,
                                         window_flag,
                                         display)
@@ -540,6 +542,7 @@ class GratingStim():
         # get parameters
         distance = self.stim_window.distance
         resolution = self.stim_window.resolution
+
         duration = self.stim_window.duration
         params = self.stim_window.params
 
@@ -556,10 +559,7 @@ class GratingStim():
         self.duration = duration*1000.0 # ms
 
         self.rad_width = math.atan2(self.stim_window.px_width/2.0, self.distance*self.resolution)*2
-
-        print("rad width", self.rad_width)
-
-        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width
+        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width # rad/px
         self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width
         self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width/1000.0
         self.velocity = self.velocity_init
@@ -643,13 +643,13 @@ class GratingStim():
         # draw texture quad
         GL.Begin(BeginMode.Quads)
         GL.TexCoord2(1.0, 1.0)
-        GL.Vertex2(self.stim_window.px_width, self.stim_window.px_height)
+        GL.Vertex2(self.stim_window.px_width/2, self.stim_window.px_height/2)
         GL.TexCoord2(0, 1.0)
-        GL.Vertex2(-self.stim_window.px_width, self.stim_window.px_height)
+        GL.Vertex2(-self.stim_window.px_width/2, self.stim_window.px_height/2)
         GL.TexCoord2(0, 0)
-        GL.Vertex2(-self.stim_window.px_width, -self.stim_window.px_height)
+        GL.Vertex2(-self.stim_window.px_width/2, -self.stim_window.px_height/2)
         GL.TexCoord2(1.0, 0)
-        GL.Vertex2(self.stim_window.px_width, -self.stim_window.px_height)
+        GL.Vertex2(self.stim_window.px_width/2, -self.stim_window.px_height/2)
         GL.End()
 
         GL.PopMatrix()
@@ -685,17 +685,18 @@ class OptomotorGratingStim():
 
         print("rad width", self.rad_width)
 
-        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width
+        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/self.stim_window.px_width # rad/px
         self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width
         self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.px_width/self.rad_width/1000.0
         self.velocity = self.velocity_init
         self.contrast = params['contrast']
         self.brightness = params['brightness']
         self.angle = params['angle']
-        self.merging_pos = params['merging_pos']
+        self.merging_pos = int(params['merging_pos']*self.stim_window.px_width)
         self.merging_pos_deg = self.merging_pos*self.rad_width/self.stim_window.px_width
 
         print(self.stim_window.px_width)
+        print("merging", self.merging_pos)
 
         self.t_init = -self.duration*1000.0 # ms
         self.t = self.t_init
@@ -777,13 +778,13 @@ class OptomotorGratingStim():
         # draw texture quad
         GL.Begin(BeginMode.Quads)
         GL.TexCoord2(1.0, 1.0)
-        GL.Vertex2(self.stim_window.px_width, self.stim_window.px_height)
+        GL.Vertex2(self.stim_window.px_width/2, self.stim_window.px_height/2)
         GL.TexCoord2(0, 1.0)
-        GL.Vertex2(-self.stim_window.px_width, self.stim_window.px_height)
+        GL.Vertex2(-self.stim_window.px_width/2, self.stim_window.px_height/2)
         GL.TexCoord2(0, 0)
-        GL.Vertex2(-self.stim_window.px_width, -self.stim_window.px_height)
+        GL.Vertex2(-self.stim_window.px_width/2, -self.stim_window.px_height/2)
         GL.TexCoord2(1.0, 0)
-        GL.Vertex2(self.stim_window.px_width, -self.stim_window.px_height)
+        GL.Vertex2(self.stim_window.px_width/2, -self.stim_window.px_height/2)
         GL.End()
 
         GL.PopMatrix()

@@ -83,6 +83,13 @@ DEFAULT_GRATING_PARAMS = {'frequency': 0.2,
                           'brightness': 1.0,
                           'angle': 0}
 
+# set default params for broadband grating stim
+DEFAULT_BROADBAND_GRATING_PARAMS = {'frequency': 1,
+                                    'init_phase': 0.0,
+                                    'velocity': 0.02,
+                                    'contrast': 1.0,
+                                    'angle': 0}
+
 ##!!Set default params for OKR
 
 # set default duration for new stims
