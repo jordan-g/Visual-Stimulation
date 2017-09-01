@@ -9,10 +9,11 @@ from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderS
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
 # set fonts
-HEADER_FONT    = Font("Segoe UI", 9, FontStyle.Bold)
-BODY_FONT      = Font("Segoe UI", 9, FontStyle.Regular)
-BOLD_BODY_FONT = Font("Segoe UI", 9, FontStyle.Bold)
-ERROR_FONT     = Font("Segoe UI", 9, FontStyle.Bold)
+HEADER_FONT      = Font("Segoe UI", 9, FontStyle.Bold)
+BODY_FONT        = Font("Segoe UI", 9, FontStyle.Regular)
+BOLD_BODY_FONT   = Font("Segoe UI", 9, FontStyle.Bold)
+ITALIC_BODY_FONT = Font("Segoe UI", 9, FontStyle.Italic)
+ERROR_FONT       = Font("Segoe UI", 9, FontStyle.Bold)
 
 # set colors
 CHOICE_PANEL_COLOR = Color.WhiteSmoke
@@ -85,10 +86,11 @@ DEFAULT_GRATING_PARAMS = {'frequency': 0.2,
                           'angle': 0}
 
 # set default params for broadband grating stim
-DEFAULT_BROADBAND_GRATING_PARAMS = {'frequency': 1,
+DEFAULT_BROADBAND_GRATING_PARAMS = {'frequency': 0.2,
                                     'init_phase': 0.0,
-                                    'velocity': 0.02,
+                                    'velocity': 5,
                                     'contrast': 1.0,
+                                    'brightness': 1.0,
                                     'angle': 0}
 
 # set default params for white flash stim

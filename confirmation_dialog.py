@@ -30,7 +30,7 @@ class ConfirmationDialog():
         self.dialog_window = Form()
         self.dialog_window.AutoSize = True
         self.dialog_window.Width = 400
-        self.dialog_window.MaximumSize = Size(400, 125)
+        self.dialog_window.MaximumSize = Size(400, 225)
         self.dialog_window.StartPosition = FormStartPosition.CenterScreen
         self.dialog_window.Text = title
         self.dialog_window.FormBorderStyle = FormBorderStyle.FixedSingle

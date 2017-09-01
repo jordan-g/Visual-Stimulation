@@ -49,8 +49,8 @@ class StimDialog():
         else:
             # we are creating a new stim; make new stim params
             self.i = len(self.controller.config_params['stim_list'])
-            self.stim_name = "Stim {0}".format(self.i + 1)
             self.stim_type = 'Looming Dot'
+            self.stim_name = self.stim_type
             self.stim_duration = self.controller.default_stim_duration()
             self.stim_parameters = self.controller.default_stim_params(self.stim_type)
 
@@ -250,6 +250,7 @@ class StimDialog():
         if new_stim_type != self.stim_type:
             # update stim type
             self.stim_type = new_stim_type
+            self.stim_name = new_stim_type
 
             if new_stim_type in self.saved_stim_parameters:
                 # we have previously set parameters for this stim type; restore these
@@ -265,6 +266,8 @@ class StimDialog():
 
             # populate stim param panel
             self.populate_stim_param_panel()
+
+            self.name_textbox.Text = self.stim_name
 
         # allow the dialog window to refresh
         self.dialog_window.ResumeLayout()
@@ -386,12 +389,14 @@ class StimDialog():
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])
                                      and is_number_between_0_and_1(stim_params['contrast'])
+                                     and is_number_between_0_and_1(stim_params['brightness'])
                                      and is_number(stim_params['angle']))
         elif stim_type in ["Grating", "Broadband Grating"]:
             stim_params_are_valid = (is_positive_number(stim_params['frequency'])
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])
                                      and is_number_between_0_and_1(stim_params['contrast'])
+                                     and is_number_between_0_and_1(stim_params['brightness'])
                                      and is_number(stim_params['angle']))
         elif stim_type == "White Flash":
             stim_params_are_valid = is_number_between_0_and_1(stim_params['brightness'])

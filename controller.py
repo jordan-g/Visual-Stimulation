@@ -9,6 +9,11 @@ import datetime
 import time
 import json
 
+from OpenTK import *
+from OpenTK.Graphics import *
+from OpenTK.Graphics.OpenGL import *
+from OpenTK.Input import *
+
 from shared import *
 
 class StimController():
@@ -45,11 +50,20 @@ class StimController():
         self.param_window = None
         self.stim_window  = None
 
-        # start threads for param & stim windows
-        self.black_projector_thread = threading.Thread(target=self.create_black_projector_window)
-        self.black_projector_thread.start()
+        self.black_projector_window = None
+        self.black_projector_thread = None
 
-        time.sleep(1)
+        # try to use a second display (projector)
+        display = DisplayDevice.GetDisplay(DisplayIndex.Second)
+
+        if display is not None:
+            # start threads for param & stim windows
+            self.black_projector_thread = threading.Thread(target=self.create_black_projector_window)
+            self.black_projector_thread.start()
+
+            time.sleep(1)
+        else:
+            self.display_index = 0
 
         # start threads for param & stim windows
         self.param_thread = threading.Thread(target=self.create_param_window)
@@ -501,18 +515,33 @@ class StimController():
             print("Troubleshooting mode disabled.")
 
     def restart_stim_window(self, display_index):
-        self.display_index = display_index
+        if display_index != self.display_index:
+            self.display_index = display_index
 
-        if self.stim_window:
-            self.stim_window.Dispose()
+            if self.stim_window:
+                self.stim_window.Dispose()
 
-        self.stim_window = None
+            self.stim_window = None
 
-        self.stim_thread.join()
+            self.stim_thread.join()
 
-        # start thread for stim window
-        self.stim_thread = threading.Thread(target=self.create_stim_window)
-        self.stim_thread.start()
+            if self.display_index == 1:
+                # try to use a second display (projector)
+                display = DisplayDevice.GetDisplay(DisplayIndex.Second)
+
+                if display is not None:
+                    # start threads for param & stim windows
+                    self.black_projector_thread = threading.Thread(target=self.create_black_projector_window)
+                    self.black_projector_thread.start()
+
+                    time.sleep(1)
+                else:
+                    self.display_index = 0
+                    self.param_window.display_chooser.SelectedItem = "Monitor"
+
+            # start thread for stim window
+            self.stim_thread = threading.Thread(target=self.create_stim_window)
+            self.stim_thread.start()
 
     def close_windows(self):
         print("Controller: Closing windows.")

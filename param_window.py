@@ -388,10 +388,19 @@ class ParamWindow(Form):
 
         # update stim window's params
         if self.controller.stim_window:
-            self.controller.experiment_params[sender.Name] = sender.Value/100.0
-            self.controller.save_experiment_params()
+            if self.controller.running_stim:
+                confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Changing experiment paremeters will stop the currently-running stimulation. Continue?")
+            else:
+                confirmation = True
 
-            self.controller.stim_window.update_params()
+            if confirmation:
+                # stop any running stim
+                self.controller.stop_stim(ignore_troubleshooting=True)
+                
+                self.controller.experiment_params[sender.Name] = sender.Value/100.0
+                self.controller.save_experiment_params()
+
+                self.controller.stim_window.update_params()
 
     def add_config_choice_panel(self):
         # create config choice panel
@@ -951,6 +960,7 @@ class ParamWindow(Form):
         self.progress_label.ForeColor = Color.Red
         self.progress_label.Padding = Padding(5)
         self.progress_label.AutoSize = True
+        self.progress_label.Font = ITALIC_BODY_FONT
 
         # add display chooser label
         self.display_chooser_label = Label()
@@ -963,9 +973,10 @@ class ParamWindow(Form):
         self.display_chooser = ComboBox()
         self.display_chooser.DropDownStyle = ComboBoxStyle.DropDownList
         self.display_chooser.Parent = self.button_panel_2
+        display_options = ["Monitor", "Projector"]
         self.display_chooser.Items.AddRange(Array[str](["Monitor", "Projector"]))
         self.display_chooser.SelectionChangeCommitted += self.on_display_choice
-        self.display_chooser.Text = "Projector"
+        self.display_chooser.SelectedItem = display_options[self.controller.display_index]
         self.display_chooser.Width = 100
         self.display_chooser.BackColor = BUTTON_PANEL_COLOR
         self.display_chooser.Font = BODY_FONT
@@ -976,7 +987,7 @@ class ParamWindow(Form):
         self.total_time_label.Text = "Total Time: {}s".format(sum(self.controller.config_params['durations_list']))
         self.total_time_label.Width = 200
         self.total_time_label.Padding = Padding(5)
-        self.total_time_label.Font = BOLD_BODY_FONT
+        self.total_time_label.Font = ITALIC_BODY_FONT
 
     def update_total_time_label(self):
         if self.total_time_label:
