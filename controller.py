@@ -553,7 +553,7 @@ class Timer(threading.Thread):
             curr_time = time.time() - self.stim_start_time
             minutes   = int(curr_time // 60)
             seconds   = int(curr_time % 60)
-            stim_name = self.controller.stim_window.stim_type
+            stim_name = self.controller.stim_window.stim_name
             self.progress_label.Text = "{0:02d}:{1:02d} - {2}".format(minutes, seconds, stim_name)
 
 # --- HELPER FUNCTIONS --- #

@@ -119,6 +119,7 @@ class StimWindow(GameWindow):
 
     def get_stim_params(self, index):
         self.stim_type = self.controller.config_params['types_list'][index]
+        self.stim_name = self.controller.config_params['stim_list'][index]
         self.duration = self.controller.config_params['durations_list'][index]
         self.params = self.controller.config_params['parameters_list'][index]
 

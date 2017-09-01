@@ -950,7 +950,7 @@ class ParamWindow(Form):
         self.progress_label.Width = 200
         self.progress_label.ForeColor = Color.Red
         self.progress_label.Padding = Padding(5)
-        # self.progress_label.AutoSize = True
+        self.progress_label.AutoSize = True
 
         # add display chooser label
         self.display_chooser_label = Label()
