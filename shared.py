@@ -9,9 +9,10 @@ from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderS
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
 # set fonts
-HEADER_FONT = Font("Segoe UI", 9, FontStyle.Bold)
-BODY_FONT   = Font("Segoe UI", 9, FontStyle.Regular)
-ERROR_FONT  = Font("Segoe UI", 9, FontStyle.Bold)
+HEADER_FONT    = Font("Segoe UI", 9, FontStyle.Bold)
+BODY_FONT      = Font("Segoe UI", 9, FontStyle.Regular)
+BOLD_BODY_FONT = Font("Segoe UI", 9, FontStyle.Bold)
+ERROR_FONT     = Font("Segoe UI", 9, FontStyle.Bold)
 
 # set colors
 CHOICE_PANEL_COLOR = Color.WhiteSmoke

@@ -34,6 +34,9 @@ class ParamWindow(Form):
         # initialize invalid params label
         self.invalid_params_label = None
 
+        # initialize total time label
+        self.total_time_label = None
+
         # set window details
         self.Text = 'Parameters'
         self.StartPosition = FormStartPosition.Manual
@@ -614,6 +617,9 @@ class ParamWindow(Form):
         # allow the param window to refresh
         self.ResumeLayout()
 
+        # update total time label
+        self.update_total_time_label()
+
     def add_stim_to_stim_list_panel(self, i):
         # create stim subpanel
         subpanel = FlowLayoutPanel()
@@ -837,6 +843,9 @@ class ParamWindow(Form):
                 # allow the param window to refresh
                 self.ResumeLayout()
 
+                # update total time label
+                self.update_total_time_label()
+
     def edit_stim(self, sender, event):
         # get stim index
         stim_index = sender.Parent.Tag
@@ -867,6 +876,9 @@ class ParamWindow(Form):
 
             # allow the param window to refresh
             self.ResumeLayout()
+
+            # update total time label
+            self.update_total_time_label()
 
     def add_save_button_panel(self):
         # create save button panel
@@ -958,6 +970,18 @@ class ParamWindow(Form):
         self.display_chooser.BackColor = BUTTON_PANEL_COLOR
         self.display_chooser.Font = BODY_FONT
 
+        # add total time indicator
+        self.total_time_label = Label()
+        self.total_time_label.Parent = self.button_panel_2
+        self.total_time_label.Text = "Total Time: {}s".format(sum(self.controller.config_params['durations_list']))
+        self.total_time_label.Width = 200
+        self.total_time_label.Padding = Padding(5)
+        self.total_time_label.Font = BOLD_BODY_FONT
+
+    def update_total_time_label(self):
+        if self.total_time_label:
+            self.total_time_label.Text = "Total Time: {}s".format(sum(self.controller.config_params['durations_list']))
+
     def on_display_choice(self, sender, event):
         if self.controller.running_stim:
             confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Changing where the stimulation is displayed will stop the currently-running stimulation. Continue?")
@@ -992,6 +1016,9 @@ class ParamWindow(Form):
 
                 # allow the param window to refresh
                 self.ResumeLayout()
+
+                # update total time label
+                self.update_total_time_label()
 
     def save_experiment_params(self, sender, event):
         print("ParamWindow: Saving experiment params.")
