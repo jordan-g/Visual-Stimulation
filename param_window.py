@@ -1031,7 +1031,7 @@ class ParamWindow(Form):
                 # update total time label
                 self.update_total_time_label()
 
-    def save_experiment_params(self, sender, event):
+    def save_experiment_params(self, sender, event): #TODO: Fix this to save ALL params
         print("ParamWindow: Saving experiment params.")
 
         # get contents of param textboxes
@@ -1121,5 +1121,9 @@ class ParamWindow(Form):
 
         # save experiment params
         self.save_experiment_params(self, None)
+
+        self.controller.save_experiments()
+        self.controller.save_configs()
+        self.controller.save_config_params()
 
         self.controller.close_windows()

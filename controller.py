@@ -506,6 +506,9 @@ class StimController():
     def default_stim_duration(self):
         return DEFAULT_STIM_DURATION
 
+    def current_stim_state(self):
+        return self.stim_window.current_stim_state()
+
     def toggle_troubleshooting(self, sender=None, event=None):
         self.troubleshooting = not self.troubleshooting
 
@@ -553,8 +556,9 @@ class StimController():
         if self.black_projector_window:
             self.black_projector_window.Exit()
 
-        # close the threads
-        self.stim_thread.join()
+        if self.stim_thread:
+            # close the threads
+            self.stim_thread.join()
 
         if self.black_projector_thread:
             self.black_projector_thread.join()
