@@ -313,6 +313,10 @@ class LoomingDotStim():
         duration = self.stim_window.duration
         params = self.stim_window.params
 
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
+
         # update parameters
         self.update_params(distance, resolution, duration, params)
 
@@ -347,7 +351,10 @@ class LoomingDotStim():
         pass
 
     def current_state(self):
-        return {"radius": self.looming_dot.radius}, ["radius"]
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type,
+                "radius": self.looming_dot.radius}, ["radius"]
 
     def render_func(self):
         GL.LoadIdentity()
@@ -431,6 +438,10 @@ class MovingDotStim():
         duration = self.stim_window.duration
         params = self.stim_window.params
 
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
+
         # update parameters
         self.update_params(distance, resolution, duration, params)
 
@@ -472,7 +483,10 @@ class MovingDotStim():
         pass
 
     def current_state(self):
-        return {"x": self.moving_dot.x,
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type,
+                "x": self.moving_dot.x,
                 "y": self.moving_dot.y}, ["x", "y"]
 
     def render_func(self):
@@ -501,6 +515,10 @@ class CombinedDotStim():
         resolution = self.stim_window.resolution
         duration = self.stim_window.duration
         params = self.stim_window.params
+
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
 
         # update parameters
         self.update_params(distance, resolution, duration, params)
@@ -547,7 +565,10 @@ class CombinedDotStim():
         pass
 
     def current_state(self):
-        return {"looming dot radius": self.looming_dot.radius,
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type,
+                "looming dot radius": self.looming_dot.radius,
                 "moving dot x": self.moving_dot.x,
                 "moving dot y": self.moving_dot.y}, ["looming dot radius", "moving dot x", "moving dot y"]
 
@@ -576,6 +597,10 @@ class GratingStim():
 
         duration = self.stim_window.duration
         params = self.stim_window.params
+
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
 
         # update parameters
         self.update_params(distance, resolution, duration, params)
@@ -610,7 +635,7 @@ class GratingStim():
 
     def genTexture(self):
         # generate the grating texture
-        for x in range(self.stim_window.display_width*2):
+        for x in range(self.stim_window.display_width*3):
             w = int(round((self.contrast*math.sin(self.frequency*x*2*math.pi - self.phase*self.frequency*2*math.pi) + 1.0)*self.brightness*255.0/2.0))
             self.grating[4*x] = Byte(w)
             self.grating[4*x+1] = Byte(w)
@@ -622,7 +647,7 @@ class GratingStim():
             GL.DeleteTextures(1, self.texture)
 
         # generate the texture
-        self.grating = Array.CreateInstance(Byte, self.stim_window.display_width*2 * 4)
+        self.grating = Array.CreateInstance(Byte, self.stim_window.display_width*3 * 4)
         self.genTexture()
 
         # create the texture
@@ -633,7 +658,7 @@ class GratingStim():
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
 
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.stim_window.display_width*2, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.stim_window.display_width*3, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
 
     def change_velocity(self, change_in_velocity):
         self.velocity = change_in_velocity*self.velocity_init
@@ -654,7 +679,10 @@ class GratingStim():
         pass
 
     def current_state(self):
-        return {"phase": self.phase}, ["phase"]
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type,
+                "phase": self.phase}, ["phase"]
 
     def render_func(self):
         GL.LoadIdentity()
@@ -679,7 +707,7 @@ class GratingStim():
         GL.PushMatrix()
         GL.Translate(self.stim_window.px_width/2, self.stim_window.px_height/2, 0)
         GL.Rotate(self.angle, 0, 0, 1)
-        GL.Scale(2*self.stim_window.display_width/self.stim_window.px_width, 2*self.stim_window.display_height/self.stim_window.px_height, 1)
+        GL.Scale(3*self.stim_window.display_width/self.stim_window.px_width, 3*self.stim_window.display_height/self.stim_window.px_height, 1)
 
         # draw texture quad
         GL.Begin(BeginMode.Quads)
@@ -709,6 +737,10 @@ class OptomotorGratingStim():
         resolution = self.stim_window.resolution
         duration = self.stim_window.duration
         params = self.stim_window.params
+
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
 
         # update parameters
         self.update_params(distance, resolution, duration, params)
@@ -799,7 +831,10 @@ class OptomotorGratingStim():
         pass
 
     def current_state(self):
-        return {"phase": self.phase}, ["phase"]
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type,
+                "phase": self.phase}, ["phase"]
 
     def render_func(self):
         GL.LoadIdentity()
@@ -852,6 +887,10 @@ class BroadbandGratingStim():
         resolution = self.stim_window.resolution
         duration = self.stim_window.duration
         params = self.stim_window.params
+
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
 
         # update parameters
         self.update_params(distance, resolution, duration, params)
@@ -937,7 +976,10 @@ class BroadbandGratingStim():
         pass
 
     def current_state(self):
-        return {"phase": self.phase}, ["phase"]
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type,
+                "phase": self.phase}, ["phase"]
 
     def render_func(self):
         GL.LoadIdentity()
@@ -991,6 +1033,10 @@ class DelayStim():
         duration = self.stim_window.duration
         params = self.stim_window.params
 
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
+
         # update parameters
         self.update_params(distance, resolution, duration, params)
 
@@ -1009,7 +1055,9 @@ class DelayStim():
         pass
 
     def current_state(self):
-        return None, None
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type}, None
 
     def render_func(self):
         pass
@@ -1023,6 +1071,10 @@ class BlackFlashStim():
         resolution = self.stim_window.resolution
         duration = self.stim_window.duration
         params = self.stim_window.params
+
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
 
         # update parameters
         self.update_params(distance, resolution, duration, params)
@@ -1042,7 +1094,9 @@ class BlackFlashStim():
         pass
 
     def current_state(self):
-        return None, None
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type}, None
 
     def render_func(self):
         GL.LoadIdentity()
@@ -1066,6 +1120,10 @@ class WhiteFlashStim():
         duration = self.stim_window.duration
         params = self.stim_window.params
 
+        self.stim_index = self.stim_window.stim_index
+        self.stim_name  = self.stim_window.stim_name
+        self.stim_type  = self.stim_window.stim_type
+
         self.brightness = params['brightness']
 
         # update parameters
@@ -1086,7 +1144,9 @@ class WhiteFlashStim():
         pass
 
     def current_state(self):
-        return None, None
+        return {"stim #": self.stim_index,
+                "stim name": self.stim_name,
+                "stim type": self.stim_type}, None
 
     def render_func(self):
         GL.LoadIdentity()
