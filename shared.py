@@ -43,7 +43,10 @@ DEFAULT_LOOMING_DOT_PARAMS = {'looming_dot_init_x_pos': 0,
                               'looming_dot_init_y_pos': 0,
                               'l_v': 20,                   ## edited from 150 to 20
                               'looming_dot_brightness': 1.0,
-                              'background_brightness': 0}
+                              'background_brightness': 0,
+                              'checkered': False,
+                              'num_squares': 10,
+                              'expand_checkered_pattern': True}
 
 # set default params for moving dot stim
 DEFAULT_MOVING_DOT_PARAMS = {'radius': 10.0,

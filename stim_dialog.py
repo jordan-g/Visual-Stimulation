@@ -4,7 +4,7 @@ clr.AddReference("System.Drawing")
 
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel
-from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar
+from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
@@ -146,6 +146,7 @@ class StimDialog():
         
         # initialize stim param text controls dict
         self.stim_param_textboxes = {}
+        self.stim_param_checkboxes = {}
 
         # add name label & textbox
         add_param_label('Name:', self.stim_param_panel)
@@ -178,6 +179,9 @@ class StimDialog():
             self.add_stim_param_to_window('l_v', 'l/v (ms)')
             self.add_stim_param_to_window('looming_dot_brightness', 'Dot brightness (0 - 1)') #Will need to change to brightness ie moving dot
             self.add_stim_param_to_window('background_brightness', 'Background brightness (0 - 1)')     #here is the background_brightness problem
+            self.add_stim_param_checkbox_to_window('checkered', 'Checkerboard pattern?')     #here is the background_brightness problem
+            self.add_stim_param_to_window('num_squares', 'Number of squares in the checkerboard pattern')     #here is the background_brightness problem
+            self.add_stim_param_checkbox_to_window('expand_checkered_pattern', 'Expanding checkerboard pattern?')     #here is the background_brightness problem
 ##            self.add_stim_param_to_window('background', ' Background (0-1)')##Will add option to change background
         elif self.stim_type == "Moving Dot":
             self.add_stim_param_to_window('radius', 'Radius (px)')
@@ -236,13 +240,28 @@ class StimDialog():
         self.stim_param_textboxes[name].BackColor = TEXTBOX_COLOR
         self.stim_param_textboxes[name].Font = BODY_FONT
 
+    def add_stim_param_checkbox_to_window(self, name, label_text):
+        # add param label
+        add_param_label(label_text + ':', self.stim_param_panel)
+
+        # add param textbox
+        self.stim_param_checkboxes[name] = CheckBox()
+        self.stim_param_checkboxes[name].Parent = self.stim_param_panel
+        self.stim_param_checkboxes[name].Text = ""
+        self.stim_param_checkboxes[name].Checked = self.stim_parameters[name]
+        self.stim_param_checkboxes[name].AutoSize = True
+        self.stim_param_checkboxes[name].Width = 360
+        self.stim_param_checkboxes[name].BackColor = TEXTBOX_COLOR
+        self.stim_param_checkboxes[name].Font = BODY_FONT
+
     def on_stim_choice(self, sender, event):
         # stop the dialog window from refreshing
         self.dialog_window.SuspendLayout()
 
         # save a copy of the current stim params for the currently selected stim type
         self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
-        self.saved_stim_parameters[self.stim_type] = {key: float(value) for (key, value) in self.stim_param_textbox_values.items()}
+        self.stim_param_checkbox_values = {key: value.Checked for (key, value) in self.stim_param_checkboxes.items()}
+        self.saved_stim_parameters[self.stim_type] = dict({key: float(value) for (key, value) in self.stim_param_textbox_values.items()}.items() + {key: bool(value) for (key, value) in self.stim_param_checkbox_values.items()}.items())
 
         # get selected stim type
         new_stim_type = self.stim_chooser.SelectedItem.ToString()
@@ -322,6 +341,7 @@ class StimDialog():
 
         # get contents of param textboxes
         self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
+        self.stim_param_checkbox_values = {key: value.Checked for (key, value) in self.stim_param_checkboxes.items()}
         name = self.name_textbox.Text
         duration = self.duration_textbox.Text
         type = self.stim_chooser.SelectedItem.ToString()
@@ -333,7 +353,7 @@ class StimDialog():
             self.remove_invalid_params_text()
             
             # create new parameters dicts
-            new_stim_params = {key: float(value) for (key, value) in self.stim_param_textbox_values.items()}
+            new_stim_params = dict({key: float(value) for (key, value) in self.stim_param_textbox_values.items()}.items() + {key: bool(value) for (key, value) in self.stim_param_checkbox_values.items()}.items())
 
             # update config params
             self.controller.config_params['stim_list'][self.i] = name

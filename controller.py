@@ -263,10 +263,7 @@ class StimController():
         self.stim_window = StimWindow(self, display_index=self.display_index)
 
         # run stim window @ 60fps
-        try:
-            self.stim_window.Run(60)
-        except:
-            pass
+        self.stim_window.Run(60)
 
     def create_black_projector_window(self):
         print("Controller: Creating black projector window.")

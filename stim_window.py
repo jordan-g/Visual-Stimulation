@@ -254,7 +254,9 @@ class LoomingDot():
     def __init__(self, stim):
         self.stim = stim
 
-    def update_params(self, distance, resolution, params, window_width, window_height): 
+    def update_params(self, distance, resolution, params, window_width, window_height):
+        self.redraw = False
+
         self.resolution = resolution # px/cm
         self.distance   = distance # cm
         self.window_width = window_width
@@ -265,30 +267,102 @@ class LoomingDot():
         self.y        = math.tan(math.radians(params['looming_dot_init_y_pos']))*self.distance*self.resolution/(self.window_height/2)
         self.l_v      = params['l_v']
         self.brightness = params['looming_dot_brightness']
+        self.contrast = 1
 
         self.A = self.distance*self.resolution*-self.l_v 
 
         self.radius_init = 1 # initial radius
         self.radius = self.radius_init
 
+        self.angle = 0
+        self.phase = 0
+        self.frequency = 0.01
+
+        self.texture = None
+
+        self.checkered = params['checkered']
+        self.texture_size = 100
+
+        self.num_squares = params['num_squares']
+        self.expand_checkered_pattern = params['expand_checkered_pattern']
+
+        self.redraw = True
+
+    def genTexture(self):
+        # generate the grating texture
+        for x in range(self.texture_size):
+            for y in range(self.texture_size):
+                if ((x // (self.texture_size/2)) % 2 == 0) ^ ((y // (self.texture_size/2)) % 2 == 1):
+                    w = self.brightness*255.0
+                else:
+                    w = 0
+                self.grating[self.texture_size*4*x + 4*y] = Byte(w)
+                self.grating[self.texture_size*4*x + 4*y+1] = Byte(w)
+                self.grating[self.texture_size*4*x + 4*y+2] = Byte(w)
+                self.grating[self.texture_size*4*x + 4*y+3] = Byte(255)
+
+    def initTexture(self):
+        if self.texture is not None:
+            GL.DeleteTextures(1, self.texture)
+
+        # generate the texture
+        self.grating = Array.CreateInstance(Byte, self.texture_size * self.texture_size * 4)
+        self.genTexture()
+
+        # create the texture
+        self.texture = GL.GenTexture()
+        GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
+        GL.TexEnv( TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode,  int(TextureEnvMode.Modulate) )
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
+
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.texture_size, self.texture_size, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
+
     def update_func(self, time):
         if time < 0:
             # update radius
             self.radius = self.A/time
-        else:
-            # dot has reached the screen; make sure it covers the whole viewport
-            self.radius = self.max_radius
 
     def draw_circle(self, n_vertices, radius):
+        radius = min(2*(self.window_width/2.0), max(-2*(self.window_width/2.0), radius))
         radius_x = radius/(self.window_width/2.0)
         radius_y = radius/(self.window_height/2.0)
 
-        GL.Begin(BeginMode.Polygon)
-        for angle in linspace(0, 2*math.pi, n_vertices):
-            GL.Vertex2(radius_x*math.sin(angle), radius_y*math.cos(angle))
-        GL.End()
+        if not self.checkered:
+            GL.Begin(BeginMode.Polygon)
+            for angle in linspace(0, 2*math.pi, n_vertices):
+                GL.Vertex2(radius_x*math.sin(angle), radius_y*math.cos(angle))
+            GL.End()
+        else:
+            GL.Enable(EnableCap.Texture2D)
+
+            GL.Begin(BeginMode.Polygon)
+            for angle in linspace(0, 2*math.pi, n_vertices):
+                if self.expand_checkered_pattern:
+                    GL.TexCoord2((self.num_squares/2)*(0.5+0.5*math.sin(angle)), (self.num_squares/2)*(0.5+0.5*math.cos(angle)))
+                else:
+                    GL.TexCoord2((self.num_squares/2)*(radius_y/radius_x)*(0.5+0.5*radius_x*math.sin(angle)), (self.num_squares/2)*(0.5+0.5*radius_y*math.cos(angle)))
+                GL.Vertex2(radius_x*math.sin(angle), radius_y*math.cos(angle))
+            GL.End()
+
+            GL.Disable(EnableCap.Texture2D)
+
+    def end_func(self):
+        if self.checkered:
+            GL.DeleteTextures(1, self.texture)
+        pass
 
     def render_func(self):
+        if self.redraw:
+            # redraw the texture
+            self.initTexture()
+
+            # reset redraw bool
+            self.redraw = False
+
         GL.PushMatrix()
 
         # set dot position
@@ -655,8 +729,10 @@ class GratingStim():
         GL.BindTexture(TextureTarget.Texture2D, self.texture)
 
         GL.TexEnv( TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode,  int(TextureEnvMode.Modulate) )
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Nearest))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Nearest))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
 
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.stim_window.display_width*3, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
 
