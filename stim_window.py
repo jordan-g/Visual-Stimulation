@@ -325,6 +325,8 @@ class LoomingDot():
         if time < 0:
             # update radius
             self.radius = self.A/time
+        else:
+            self.radius = self.max_radius
 
     def draw_circle(self, n_vertices, radius):
         radius = min(2*(self.window_width/2.0), max(-2*(self.window_width/2.0), radius))
