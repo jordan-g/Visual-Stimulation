@@ -303,18 +303,18 @@ class ParamWindow(Form):
         self.add_exp_param_slider_to_window('width', 'Viewport width', 1, 100)
         self.add_exp_param_slider_to_window('height', 'Viewport height', 1, 100)
 
-        # add filler subpanel
-        exp_param_subpanel = FlowLayoutPanel()
-        exp_param_subpanel.Parent = self.exp_param_panel
-        exp_param_subpanel.BackColor = PARAM_PANEL_COLOR
-        exp_param_subpanel.Dock = DockStyle.Bottom
-        exp_param_subpanel.Padding = Padding(0)
-        exp_param_subpanel.FlowDirection = FlowDirection.TopDown
-        exp_param_subpanel.WrapContents = False
-        exp_param_subpanel.Width = int(self.Width/3) - 20
-        exp_param_subpanel.Height = 50
-        # exp_param_subpanel.AutoSize = True
-        exp_param_subpanel.Font = BODY_FONT
+        # # add filler subpanel
+        # exp_param_subpanel = FlowLayoutPanel()
+        # exp_param_subpanel.Parent = self.exp_param_panel
+        # exp_param_subpanel.BackColor = PARAM_PANEL_COLOR
+        # exp_param_subpanel.Dock = DockStyle.Bottom
+        # exp_param_subpanel.Padding = Padding(0)
+        # exp_param_subpanel.FlowDirection = FlowDirection.TopDown
+        # exp_param_subpanel.WrapContents = False
+        # exp_param_subpanel.Width = int(self.Width/3) - 20
+        # exp_param_subpanel.Height = 50
+        # # exp_param_subpanel.AutoSize = True
+        # exp_param_subpanel.Font = BODY_FONT
 
         self.add_exp_param_slider_to_window('x_offset', 'Viewport x offset', 0, 100)
         self.add_exp_param_slider_to_window('y_offset', 'Viewport y offset', 0, 100)
@@ -397,7 +397,7 @@ class ParamWindow(Form):
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
         exp_param_subpanel.Width = int(self.Width/3) - 15
-        # exp_param_subpanel.Height = 50
+        exp_param_subpanel.Height = 50
         # exp_param_subpanel.AutoSize = True
         exp_param_subpanel.Font = BODY_FONT
 
@@ -1081,12 +1081,16 @@ class ParamWindow(Form):
         # get contents of param textboxes
         self.exp_param_values         = {key: value.Text for (key, value) in self.exp_param_textboxes.items()}
         self.exp_param_slider_values  = {key: value.Value/100.0 for (key, value) in self.exp_param_sliders.items()}
+        self.exp_param_checkbox_values = {key: value.Checked for (key, value) in self.exp_param_checkboxes.items()}
 
         self.exp_param_values.update(self.exp_param_slider_values)
+        self.exp_param_values.update(self.exp_param_checkbox_values)
 
         if self.are_valid_params(self.exp_param_values):
             # create new parameters dicts
             new_exp_params = {key: float(value) for (key, value) in self.exp_param_values.items()}
+
+            print(new_exp_params)
 
             if not are_experiment_params_equal(self.controller.experiment_params, new_exp_params):
                 if self.controller.running_stim:

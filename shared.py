@@ -144,6 +144,8 @@ def are_experiment_params_equal(experiment_params_1, experiment_params_2):
     experiment_params_are_equal = (experiment_params_1['screen_cm_width'] == experiment_params_2['screen_cm_width']
                                and experiment_params_1['screen_px_width'] == experiment_params_2['screen_px_width']
                                and experiment_params_1['distance']        == experiment_params_2['distance']
+                               and experiment_params_1['dish_radius']     == experiment_params_2['dish_radius']
+                               and experiment_params_1['warp_perspective'] == experiment_params_2['warp_perspective']
                                and experiment_params_1['width']           == experiment_params_2['width']
                                and experiment_params_1['height']          == experiment_params_2['height']
                                and experiment_params_1['x_offset']        == experiment_params_2['x_offset']

@@ -187,6 +187,8 @@ class StimController():
         self.experiment_params['screen_cm_width'] = new_params['screen_cm_width']
         self.experiment_params['screen_px_width'] = new_params['screen_px_width']
         self.experiment_params['distance']        = new_params['distance']
+        self.experiment_params['dish_radius']     = new_params['dish_radius']
+        self.experiment_params['warp_perspective'] = new_params['warp_perspective']
         self.experiment_params['width']           = new_params['width']
         self.experiment_params['height']          = new_params['height']
         self.experiment_params['x_offset']        = new_params['x_offset']

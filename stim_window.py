@@ -84,10 +84,16 @@ class StimWindow(GameWindow):
         # initialize started bool
         self.started = False
 
+        self.reset_stim = False
+
         # update stim params
         self.update_params()
 
+        self.switch_to_stim(0)
+
     def create_frame_buffer(self):
+        print("Creating frame buffer.")
+
         GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit)
 
         texture = Array.CreateInstance(Byte, Array[int]([self.display_width, self.display_height, 3]))
@@ -102,11 +108,11 @@ class StimWindow(GameWindow):
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
 
-        GL.BindTexture(TextureTarget.Texture2D, 0)
-
         self.frame_buffer = GL.GenFramebuffer()
         GL.BindFramebuffer(FramebufferTarget.Framebuffer, self.frame_buffer)
         GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, self.texture, 0)
+
+        GL.BindTexture(TextureTarget.Texture2D, 0)
 
     def update_params(self):
         print("StimWindow: Updating params.")
@@ -135,7 +141,8 @@ class StimWindow(GameWindow):
         self.vertex_xs = [ (dish_radius*math.sin(theta)) for theta in self.thetas ]
 
         # reset stim
-        self.switch_to_stim(0)
+        if self.stim is not None:
+            self.reset_stim = True
 
     def change_param(self, param_dimension, change_in_param):
         if self.stim_type == "Grating":
@@ -182,6 +189,10 @@ class StimWindow(GameWindow):
         return stim_dict, keys_list
 
     def create_stim(self):
+        # run stim's end func
+        if self.stim != None:
+            self.stim.end_func()
+            
         if self.n_stim > 0:
             if self.stim_type == "Looming Dot":
                 self.stim = LoomingDotStim(self)
@@ -208,6 +219,12 @@ class StimWindow(GameWindow):
         GameWindow.OnUpdateFrame(self, e)
 
         if self.stim != None:
+            if self.reset_stim:
+                # reset stim
+                self.switch_to_stim(0)
+
+                self.reset_stim = False
+
             if self.controller:
                 if self.controller.running_stim:
                     # stim sequence is running
@@ -251,10 +268,6 @@ class StimWindow(GameWindow):
                                 self.stim.update_func(elapsed_time)
                         else:
                             # stim's duration has finished
-
-                            # run stim's end func
-                            if self.stim != None:
-                                self.stim.end_func()
 
                             if self.stim_index != self.n_stim - 1:
                                 # we haven't reached the end of the sequence; switch to the next stim
@@ -830,6 +843,7 @@ class GratingStim():
         self.redraw = True
 
     def create_grating(self):
+        print("Creating grating.")
         self.grating = Array.CreateInstance(Byte, Array[int]([self.texture_width, 3]))
 
         # generate the grating texture
@@ -846,16 +860,22 @@ class GratingStim():
 
         # create the texture
         if self.texture is None:
+            print("Creating texture.")
             self.texture = GL.GenTexture()
 
-        GL.BindTexture(TextureTarget.Texture2D, self.texture)
+            GL.BindTexture(TextureTarget.Texture2D, self.texture)
 
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
+            GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
 
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.texture_width, 1, 0, PixelFormat.Rgb, PixelType.UnsignedByte, self.grating)
+            GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.texture_width, 1, 0, PixelFormat.Rgb, PixelType.UnsignedByte, self.grating)
+        else:
+            print("Updating texture.")
+            GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
+            GL.TexSubImage2D(TextureTarget.Texture2D, 0, 0, 0, self.texture_width, 1, PixelFormat.Rgb, PixelType.UnsignedByte, self.grating)
 
         GL.BindTexture(TextureTarget.Texture2D, 0)
 
@@ -874,7 +894,11 @@ class GratingStim():
         self.redraw = True
 
     def end_func(self):
+        print("Ending.")
+
         GL.DeleteTextures(1, self.texture)
+
+        print("Ended.")
         pass
 
     def current_state(self):
