@@ -9,7 +9,7 @@ import random
 import time
 import array
 
-from System import Array, Byte, Int32
+from System import Array, Byte, Int32, IO
 from System.Drawing import Bitmap, Rectangle, Color
 
 from OpenTK import *
@@ -20,6 +20,11 @@ from OpenTK.Input import *
 import threading
 
 from perlin_noise import pnoise1
+
+def warp(x, r1, r3):
+    # print("ho", x)
+    # print("hi", (1.0/r3)*math.copysign(1, x)*(-math.sqrt(x**2*((r3**2)*(r1-r3)**2 - (r1**2-r3**2)*(x**2))) + abs(x)*r1*(r1-r3))/((r1-r3)**2+x**2))
+    return 1/r3*math.copysign(1, x)*(-math.sqrt(x**2 * ((r3**2)*(r1-r3)**2 - (r1**2-r3**2)*x**2)) + abs(x)*r1*(r1-r3))/((r1-r3)**2+x**2)
 
 class StimWindow(GameWindow):
     def __new__(self, controller, window_name="Stimulus", display_index=1):
@@ -64,8 +69,14 @@ class StimWindow(GameWindow):
         self.TargetUpdateFrequency = 60
         self.TargetRenderFrequency = 60
 
+        # update display width and height
+        self.display_width  = self.ClientRectangle.Width
+        self.display_height = self.ClientRectangle.Height
+
         # set window's background color
-        GL.ClearColor(0, 0, 0, 0) 
+        GL.ClearColor(0, 0, 0, 0)
+
+        self.create_frame_buffer()
 
         # initialize time variable
         self.t = 0
@@ -76,6 +87,27 @@ class StimWindow(GameWindow):
         # update stim params
         self.update_params()
 
+    def create_frame_buffer(self):
+        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit)
+
+        texture = Array.CreateInstance(Byte, Array[int]([self.display_width, self.display_height, 3]))
+
+        self.texture = GL.GenTexture()
+        GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.display_width, self.display_height, 0, PixelFormat.Rgb, PixelType.UnsignedByte, texture)
+
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
+
+        GL.BindTexture(TextureTarget.Texture2D, 0)
+
+        self.frame_buffer = GL.GenFramebuffer()
+        GL.BindFramebuffer(FramebufferTarget.Framebuffer, self.frame_buffer)
+        GL.FramebufferTexture2D(FramebufferTarget.Framebuffer, FramebufferAttachment.ColorAttachment0, TextureTarget.Texture2D, self.texture, 0)
+
     def update_params(self):
         print("StimWindow: Updating params.")
 
@@ -84,7 +116,7 @@ class StimWindow(GameWindow):
         self.t = 0
 
         self.distance = self.controller.experiment_params['distance']
-        self.resolution = self.controller.experiment_params['resolution']
+        self.resolution = self.display_width/self.controller.experiment_params['screen_cm_width']
         self.px_width = int(self.controller.experiment_params['width']*self.ClientRectangle.Width)
         self.px_height = int(self.controller.experiment_params['height']*self.ClientRectangle.Height)
         self.x_offset = int((self.controller.experiment_params['x_offset'])*(self.ClientRectangle.Width - self.px_width))
@@ -92,6 +124,15 @@ class StimWindow(GameWindow):
         self.durations_list = self.controller.config_params['durations_list']
         self.t_total = sum(self.durations_list)
         self.n_stim = len(self.durations_list)
+        self.warp_perspective = self.controller.experiment_params['warp_perspective']
+        self.dish_radius = self.controller.experiment_params['dish_radius']
+
+        # warping parameters
+        self.n_cylinder_segments = 100
+        dish_radius = self.dish_radius*self.resolution
+        print("dish radius", dish_radius)
+        self.thetas = [ (i/float(self.n_cylinder_segments))*math.pi - (math.pi/2.0) for i in range(1, self.n_cylinder_segments) ]
+        self.vertex_xs = [ (dish_radius*math.sin(theta)) for theta in self.thetas ]
 
         # reset stim
         self.switch_to_stim(0)
@@ -240,12 +281,80 @@ class StimWindow(GameWindow):
                     # clear buffers
                     GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit)
 
-                    # set the viewport
-                    GL.Viewport(self.x_offset, self.y_offset, self.px_width, self.px_height)
+                    if self.frame_buffer is not None:
+                        GL.BindFramebuffer(FramebufferTarget.Framebuffer, self.frame_buffer)
+
+                    GL.Viewport(0, 0, self.display_width, self.display_height)
 
                     # run stim's render function
                     if self.stim != None:
                         self.stim.render_func()
+
+                    GL.BindFramebuffer(FramebufferTarget.Framebuffer, 0)
+
+                    # set the viewport
+                    GL.Viewport(self.x_offset, self.y_offset, self.px_width, self.px_height)
+
+                    GL.LoadIdentity()
+
+                    GL.MatrixMode(MatrixMode.Projection)
+                    GL.Ortho(0.0, self.px_width, 0.0, self.px_height, -1.0, 1.0)
+
+                    GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
+                    # enable texture mode
+                    GL.Enable(EnableCap.Texture2D)
+
+                    GL.Translate(self.px_width/2, self.px_height/2, 0)
+
+                    if self.warp_perspective:
+                        GL.Begin(BeginMode.QuadStrip)
+
+                        dish_radius = self.dish_radius*self.resolution
+                        dish_arc = dish_radius*math.pi/4
+
+                        x = (self.px_width/2 - dish_arc)/self.px_width
+
+                        GL.TexCoord2(x, 0.25)
+                        GL.Vertex2(-dish_radius, -self.px_height/2)
+                        GL.TexCoord2(x, 0.75)
+                        GL.Vertex2(-dish_radius, self.px_height/2)
+
+                        for i in range(1, self.n_cylinder_segments):
+                            tc = i/float(self.n_cylinder_segments)
+
+                            theta = self.thetas[i-1]
+                            vertex_x = self.vertex_xs[i-1]
+
+                            x = (self.px_width/2 - dish_arc + tc*2*dish_arc)/self.px_width
+
+                            GL.TexCoord2(x, 0.25)
+                            GL.Vertex2(vertex_x, -self.px_height/2)
+                            GL.TexCoord2(x, 0.75)
+                            GL.Vertex2(vertex_x, self.px_height/2)
+
+                        x = 1.0 - (self.px_width/2 - dish_arc)/self.px_width
+
+                        GL.TexCoord2(x, 0.25)
+                        GL.Vertex2(dish_radius, -self.px_height/2)
+                        GL.TexCoord2(x, 0.75)
+                        GL.Vertex2(dish_radius, self.px_height/2)
+
+                        GL.End()
+                    else:
+                        GL.Begin(BeginMode.Quads)
+                        GL.TexCoord2(0.75, 0.75)
+                        GL.Vertex2(self.px_width/2, self.px_height/2)
+                        GL.TexCoord2(0.25, 0.75)
+                        GL.Vertex2(-self.px_width/2, self.px_height/2)
+                        GL.TexCoord2(0.25, 0.25)
+                        GL.Vertex2(-self.px_width/2, -self.px_height/2)
+                        GL.TexCoord2(0.75, 0.25)
+                        GL.Vertex2(self.px_width/2, -self.px_height/2)
+                        GL.End()
+
+                    # disable texture mode
+                    GL.Disable(EnableCap.Texture2D)
 
                     # swap buffers
                     self.SwapBuffers()
@@ -288,7 +397,7 @@ class LoomingDot():
 
         self.redraw = True
 
-    def genTexture(self):
+    def create_grating(self):
         # generate the grating texture
         for x in range(self.texture_size):
             for y in range(self.texture_size):
@@ -301,19 +410,18 @@ class LoomingDot():
                 self.grating[self.texture_size*4*x + 4*y+2] = Byte(w)
                 self.grating[self.texture_size*4*x + 4*y+3] = Byte(255)
 
-    def initTexture(self):
-        if self.texture is not None:
-            GL.DeleteTextures(1, self.texture)
+    def create_texture(self):
+        if self.texture is None:
+            # create the texture
+            self.texture = GL.GenTexture()
 
         # generate the texture
         self.grating = Array.CreateInstance(Byte, self.texture_size * self.texture_size * 4)
-        self.genTexture()
+        self.create_grating()
 
-        # create the texture
-        self.texture = GL.GenTexture()
         GL.BindTexture(TextureTarget.Texture2D, self.texture)
 
-        GL.TexEnv( TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode,  int(TextureEnvMode.Modulate) )
+        # GL.TexEnv( TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode,  int(TextureEnvMode.Modulate) )
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
@@ -321,6 +429,7 @@ class LoomingDot():
 
         GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.texture_size, self.texture_size, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
 
+        GL.BindTexture(TextureTarget.Texture2D, 0)
     def update_func(self, time):
         if time < 0:
             # update radius
@@ -339,6 +448,8 @@ class LoomingDot():
                 GL.Vertex2(radius_x*math.sin(angle), radius_y*math.cos(angle))
             GL.End()
         else:
+            GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
             GL.Enable(EnableCap.Texture2D)
 
             GL.Begin(BeginMode.Polygon)
@@ -352,6 +463,8 @@ class LoomingDot():
 
             GL.Disable(EnableCap.Texture2D)
 
+            GL.BindTexture(TextureTarget.Texture2D, 0)
+
     def end_func(self):
         if self.checkered:
             GL.DeleteTextures(1, self.texture)
@@ -360,7 +473,7 @@ class LoomingDot():
     def render_func(self):
         if self.redraw:
             # redraw the texture
-            self.initTexture()
+            self.create_texture()
 
             # reset redraw bool
             self.redraw = False
@@ -434,7 +547,7 @@ class LoomingDotStim():
 
     def render_func(self):
         GL.LoadIdentity()
-        
+
         # draw in the viewport background
         GL.Begin(BeginMode.Quads)
         GL.Color3(self.background_brightness, self.background_brightness, self.background_brightness) 
@@ -683,6 +796,8 @@ class GratingStim():
 
         self.texture = None
 
+        self.create_texture()
+
     def update_params(self, distance, resolution, duration, params):
         print("GratingStim: Updating parameters.")
 
@@ -692,51 +807,57 @@ class GratingStim():
         self.distance = distance # cm
         self.duration = duration*1000.0 # ms
 
-        self.rad_width = math.atan2(self.stim_window.display_width*2/2.0, self.distance*self.resolution)*2
-        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/(self.stim_window.display_width*2) # rad/px
-        self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.display_width*2/self.rad_width
-        self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.display_width*2/self.rad_width/1000.0
+        self.rad_width = math.atan2(self.stim_window.display_width/2.0, self.distance*self.resolution)*2
+        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/(self.stim_window.display_width) # rad/px
+        self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.display_width/self.rad_width
+        self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.display_width/self.rad_width/1000.0
         self.velocity = self.velocity_init
         self.contrast = params['contrast']
         self.brightness = params['brightness']
         self.angle = params['angle']
+
+        self.velocity *= math.cos(self.angle*math.pi/180.0)
+        self.velocity_init *= math.cos(self.angle*math.pi/180.0)
 
         self.t_init = -self.duration*1000.0 # ms
         self.t = self.t_init
 
         self.phase = self.init_phase
 
+        self.texture_width = int(self.stim_window.display_width/2)
+
         # set redraw bool
         self.redraw = True
 
-    def genTexture(self):
+    def create_grating(self):
+        self.grating = Array.CreateInstance(Byte, Array[int]([self.texture_width, 3]))
+
         # generate the grating texture
-        for x in range(self.stim_window.display_width*3):
-            w = int(round((self.contrast*math.sin(self.frequency*x*2*math.pi - self.phase*self.frequency*2*math.pi) + 1.0)*self.brightness*255.0/2.0))
-            self.grating[4*x] = Byte(w)
-            self.grating[4*x+1] = Byte(w)
-            self.grating[4*x+2] = Byte(w)
-            self.grating[4*x+3] = Byte(255)
+        for x in range(self.texture_width):
+            x_2 = (x/self.texture_width)*(2*self.stim_window.display_width)
+            w = int(round((self.contrast*math.sin(self.frequency*x_2*2*math.pi - self.phase*self.frequency*2*math.pi) + 1.0)*self.brightness*255.0/2.0))
+            self.grating[x, 0] = Byte(w)
+            self.grating[x, 1] = Byte(w)
+            self.grating[x, 2] = Byte(w)
 
-    def initTexture(self):
-        if self.texture is not None:
-            GL.DeleteTextures(1, self.texture)
-
+    def create_texture(self):
         # generate the texture
-        self.grating = Array.CreateInstance(Byte, self.stim_window.display_width*3 * 4)
-        self.genTexture()
+        self.create_grating()
 
         # create the texture
-        self.texture = GL.GenTexture()
+        if self.texture is None:
+            self.texture = GL.GenTexture()
+
         GL.BindTexture(TextureTarget.Texture2D, self.texture)
 
-        GL.TexEnv( TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode,  int(TextureEnvMode.Modulate) )
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Nearest))
-        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Nearest))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
 
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.stim_window.display_width*3, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.texture_width, 1, 0, PixelFormat.Rgb, PixelType.UnsignedByte, self.grating)
+
+        GL.BindTexture(TextureTarget.Texture2D, 0)
 
     def change_velocity(self, change_in_velocity):
         self.velocity = change_in_velocity*self.velocity_init
@@ -763,29 +884,26 @@ class GratingStim():
                 "phase": self.phase}, ["phase"]
 
     def render_func(self):
-        GL.LoadIdentity()
-
-        # set projection
-        GL.MatrixMode(MatrixMode.Projection)
-        GL.Ortho(0.0, self.stim_window.px_width, 0.0, self.stim_window.px_height, -1.0, 1.0)
-
         if self.redraw:
-            # set color
-            GL.Color4(Color.White)
-
             # redraw the texture
-            self.initTexture()
+            self.create_texture()
 
             # reset redraw bool
             self.redraw = False
 
-        # enable texture mode
+        GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
+        GL.LoadIdentity()
+
+        GL.MatrixMode(MatrixMode.Projection)
+        GL.Ortho(0.0, self.stim_window.px_width, 0.0, self.stim_window.px_height, -1.0, 1.0)
+
         GL.Enable(EnableCap.Texture2D)
 
         GL.PushMatrix()
         GL.Translate(self.stim_window.px_width/2, self.stim_window.px_height/2, 0)
         GL.Rotate(self.angle, 0, 0, 1)
-        GL.Scale(3*self.stim_window.display_width/self.stim_window.px_width, 3*self.stim_window.display_height/self.stim_window.px_height, 1)
+        GL.Scale(self.stim_window.display_width/self.stim_window.px_width, self.stim_window.display_width/self.stim_window.px_height, 1)
 
         # draw texture quad
         GL.Begin(BeginMode.Quads)
@@ -803,6 +921,8 @@ class GratingStim():
 
         # disable texture mode
         GL.Disable(EnableCap.Texture2D)
+
+        GL.BindTexture(TextureTarget.Texture2D, 0)
 
 ##!!Need class OKR
 class OptomotorGratingStim():
@@ -825,6 +945,8 @@ class OptomotorGratingStim():
 
         self.texture = None
 
+        self.create_texture()
+
     def update_params(self, distance, resolution, duration, params):
         print("OptomotorStim: Updating parameters.")
 
@@ -834,19 +956,18 @@ class OptomotorGratingStim():
         self.distance = distance # cm
         self.duration = duration*1000.0 # ms
 
-        self.rad_width = math.atan2(self.stim_window.display_width*2/2.0, self.distance*self.resolution)*2
-
-        print("rad width", self.rad_width)
-
-        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/(self.stim_window.display_width*2) # rad/px
-        self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.display_width*2/self.rad_width
-        self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.display_width*2/self.rad_width/1000.0
+        self.rad_width = math.atan2(self.stim_window.display_width/2.0, self.distance*self.resolution)*2
+        self.frequency = params['frequency']*(180.0/math.pi)*self.rad_width/(self.stim_window.display_width) # rad/px
+        self.init_phase = params['init_phase']*(math.pi/180.0)*self.stim_window.display_width/self.rad_width
+        self.velocity_init = params['velocity']*(math.pi/180.0)*self.stim_window.display_width/self.rad_width/1000.0
         self.velocity = self.velocity_init
         self.contrast = params['contrast']
         self.brightness = params['brightness']
         self.angle = params['angle']
-        self.merging_pos = int(params['merging_pos']*self.stim_window.display_width + self.stim_window.display_width/2.0)
-        self.merging_pos_deg = self.merging_pos*self.rad_width/self.stim_window.display_width*2
+        self.merging_pos = int(params['merging_pos']*2*self.stim_window.display_width)
+        self.merging_pos_deg = self.merging_pos*self.rad_width/self.stim_window.display_width
+
+        print(self.merging_pos)
 
         print(self.stim_window.display_width)
         print("merging", self.merging_pos)
@@ -856,39 +977,43 @@ class OptomotorGratingStim():
 
         self.phase = self.init_phase
 
+        self.texture_width = int(self.stim_window.display_width/2)
+
         # set redraw bool
         self.redraw = True
 
-    def genTexture(self):
+    def create_grating(self):
         # generate the grating texture
-        for x in range(self.stim_window.display_width*2):
-            if x >= self.merging_pos:
-                w = (0.5*math.sin((2*self.merging_pos - x)*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
+        for x in range(self.texture_width):
+            x_2 = (x/self.texture_width)*(2*self.stim_window.display_width)
+            if x_2 >= self.merging_pos:
+                w = (0.5*math.sin((2*self.merging_pos - x_2)*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
             else:
-                w = (0.5*math.sin(x*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
+                w = (0.5*math.sin(x_2*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
 
-            self.grating[4*x] = Byte(w)
-            self.grating[4*x+1] = Byte(w)
-            self.grating[4*x+2] = Byte(w)
-            self.grating[4*x+3] = Byte(255)
+            self.grating[x, 0] = Byte(w)
+            self.grating[x, 1] = Byte(w)
+            self.grating[x, 2] = Byte(w)
 
-    def initTexture(self):
-        if self.texture is not None:
-            GL.DeleteTextures(1, self.texture)
+    def create_texture(self):
+        if self.texture is None:
+            # create the texture
+            self.texture = GL.GenTexture()
 
         # generate the texture
-        self.grating = Array.CreateInstance(Byte, self.stim_window.display_width*2 * 4)
-        self.genTexture()
+        self.grating = Array.CreateInstance(Byte, Array[int]([self.texture_width, 3]))
+        self.create_grating()
 
-        # create the texture
-        self.texture = GL.GenTexture()
         GL.BindTexture(TextureTarget.Texture2D, self.texture)
 
-        GL.TexEnv( TextureEnvTarget.TextureEnv, TextureEnvParameter.TextureEnvMode,  int(TextureEnvMode.Modulate) )
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMagFilter, int(TextureMagFilter.Linear))
         GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureMinFilter, int(TextureMagFilter.Linear))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, int(TextureWrapMode.Repeat))
+        GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, int(TextureWrapMode.Repeat))
 
-        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.stim_window.display_width*2, 1, 0, PixelFormat.Rgba, PixelType.UnsignedByte, self.grating)
+        GL.TexImage2D(TextureTarget.Texture2D, 0, PixelInternalFormat.Rgb, self.texture_width, 1, 0, PixelFormat.Rgb, PixelType.UnsignedByte, self.grating)
+
+        GL.BindTexture(TextureTarget.Texture2D, 0)
 
     def change_velocity(self, change_in_velocity):
         self.velocity = change_in_velocity*self.velocity_init
@@ -915,21 +1040,20 @@ class OptomotorGratingStim():
                 "phase": self.phase}, ["phase"]
 
     def render_func(self):
+        if self.redraw:
+            # redraw the texture
+            self.create_texture()
+
+            # reset redraw bool
+            self.redraw = False
+
+        GL.BindTexture(TextureTarget.Texture2D, self.texture)
+
         GL.LoadIdentity()
 
         # set projection
         GL.MatrixMode(MatrixMode.Projection)
         GL.Ortho(0.0, self.stim_window.px_width, 0.0, self.stim_window.px_height, -1.0, 1.0)
-
-        if self.redraw:
-            # set color
-            GL.Color4(Color.White)
-
-            # redraw the texture
-            self.initTexture()
-
-            # reset redraw bool
-            self.redraw = False
 
         # enable texture mode
         GL.Enable(EnableCap.Texture2D)
@@ -937,7 +1061,7 @@ class OptomotorGratingStim():
         GL.PushMatrix()
         GL.Translate(self.stim_window.px_width/2, self.stim_window.px_height/2, 0)
         GL.Rotate(self.angle, 0, 0, 1)
-        GL.Scale(2*self.stim_window.display_width/self.stim_window.px_width, 2*self.stim_window.display_height/self.stim_window.px_height, 1)
+        GL.Scale(self.stim_window.display_width/self.stim_window.px_width, self.stim_window.display_width/self.stim_window.px_height, 1)
 
         # draw texture quad
         GL.Begin(BeginMode.Quads)
@@ -955,6 +1079,8 @@ class OptomotorGratingStim():
 
         # disable texture mode
         GL.Disable(EnableCap.Texture2D)
+
+        GL.BindTexture(TextureTarget.Texture2D, 0)
 
 class BroadbandGratingStim():
     def __init__(self, stim_window):
@@ -992,6 +1118,8 @@ class BroadbandGratingStim():
         self.contrast = params['contrast']
         self.brightness = params['brightness']
         self.angle = params['angle']
+        self.dish_radius = self.stim_window.dish_radius
+        self.warp_perspective = self.stim_window.warp_perspective
 
         self.t_init = -self.duration*1000.0 # ms
         self.t = self.t_init
@@ -1007,7 +1135,7 @@ class BroadbandGratingStim():
     def grating_profile(self, offset):
         return [ math.sin(self.rand_frequency((x - offset) % self.stim_window.display_width*2)*((x - offset) % self.stim_window.display_width*2)*2*math.pi) for x in range(4*self.stim_window.display_width*2) ]
 
-    def genTexture(self):
+    def create_grating(self):
         # generate the grating texture
         grating_profile = self.grating_profile(self.t*self.velocity)
         for x in range(2*self.stim_window.px_width):
@@ -1017,13 +1145,13 @@ class BroadbandGratingStim():
             self.grating[4*x+2] = Byte(w)
             self.grating[4*x+3] = Byte(255)
 
-    def initTexture(self):
+    def create_texture(self):
         if self.texture is not None:
             GL.DeleteTextures(1, self.texture)
 
         # generate the texture
         self.grating = Array.CreateInstance(Byte, 2*self.stim_window.display_width*2 * 4)
-        self.genTexture()
+        self.create_grating()
 
         # create the texture
         self.texture = GL.GenTexture()
@@ -1071,7 +1199,7 @@ class BroadbandGratingStim():
             GL.Color4(Color.White)
 
             # redraw the texture
-            self.initTexture()
+            self.create_texture()
 
             # reset redraw bool
             self.redraw = False

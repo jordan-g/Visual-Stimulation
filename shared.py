@@ -8,6 +8,8 @@ from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, Trac
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
+scale = 2
+
 # set fonts
 HEADER_FONT      = Font("Segoe UI", 9, FontStyle.Bold)
 BODY_FONT        = Font("Segoe UI", 9, FontStyle.Regular)
@@ -30,13 +32,15 @@ GRATING_COLOR     = Color.LightBlue
 DELAY_COLOR       = Color.Gainsboro
 
 # set default params for new experiments
-DEFAULT_EXPERIMENT_PARAMS = {'screen_cm_width': 28.57,
-                             'screen_px_width': 1440,
+DEFAULT_EXPERIMENT_PARAMS = {'screen_cm_width': 20,
+                             'screen_px_width': 1280,
                              'distance': 30,
                              'width': 0.5,
                              'height': 0.5,
                              'x_offset': 0,
-                             'y_offset': 0}
+                             'y_offset': 0,
+                             'dish_radius': 100,
+                             'warp_perspective': True}
 
 # set default params for loooming dot stim
 DEFAULT_LOOMING_DOT_PARAMS = {'looming_dot_init_x_pos': 0,

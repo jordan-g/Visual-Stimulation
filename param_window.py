@@ -280,6 +280,7 @@ class ParamWindow(Form):
         # initialize exp param textboxes, sliders & slider labels dicts
         self.exp_param_textboxes = {}
         self.exp_param_sliders   = {}
+        self.exp_param_checkboxes = {}
         self.exp_param_slider_labels = {}
 
         # empty exp param panel
@@ -295,6 +296,9 @@ class ParamWindow(Form):
         self.add_exp_param_to_window('screen_cm_width', 'Screen width (cm)')
         self.add_exp_param_to_window('screen_px_width', 'Screen width (px)')
         self.add_exp_param_to_window('distance', 'Screen distance (cm)', tooltip="The perpendicular distance from the screen to the eye of the mouse, in centimeters.")
+
+        self.add_exp_param_checkbox_to_window('warp_perspective', 'Cylindrical projection')
+        self.add_exp_param_to_window('dish_radius', 'Dish radius (cm)')
 
         self.add_exp_param_slider_to_window('width', 'Viewport width', 1, 100)
         self.add_exp_param_slider_to_window('height', 'Viewport height', 1, 100)
@@ -383,6 +387,29 @@ class ParamWindow(Form):
         self.exp_param_sliders[name].TickFrequency = 100
         self.exp_param_sliders[name].Scroll += self.on_slider_scroll
 
+    def add_exp_param_checkbox_to_window(self, name, label_text):
+        # create exp param panel
+        exp_param_subpanel = FlowLayoutPanel()
+        exp_param_subpanel.Parent = self.exp_param_panel
+        exp_param_subpanel.BackColor = PARAM_PANEL_COLOR
+        exp_param_subpanel.Dock = DockStyle.Bottom
+        exp_param_subpanel.Padding = Padding(0)
+        exp_param_subpanel.FlowDirection = FlowDirection.TopDown
+        exp_param_subpanel.WrapContents = False
+        exp_param_subpanel.Width = int(self.Width/3) - 15
+        # exp_param_subpanel.Height = 50
+        # exp_param_subpanel.AutoSize = True
+        exp_param_subpanel.Font = BODY_FONT
+
+        self.exp_param_checkboxes[name] = CheckBox()
+        self.exp_param_checkboxes[name].Parent = exp_param_subpanel
+        self.exp_param_checkboxes[name].Checked = bool(self.controller.experiment_params[name])
+        self.exp_param_checkboxes[name].CheckedChanged += self.on_checkbox_click
+        self.exp_param_checkboxes[name].Text = label_text
+        self.exp_param_checkboxes[name].Width = int(self.Width/3) - 20
+        self.exp_param_checkboxes[name].Name = name
+        self.exp_param_checkboxes[name].AutoSize = True
+
     def on_slider_scroll(self, sender, event):
         self.exp_param_slider_labels[sender.Name].Text = self.exp_param_slider_labels[sender.Name].Name + ": " + str(sender.Value/100.0)
 
@@ -398,6 +425,23 @@ class ParamWindow(Form):
                 self.controller.stop_stim(ignore_troubleshooting=True)
                 
                 self.controller.experiment_params[sender.Name] = sender.Value/100.0
+                self.controller.save_experiment_params()
+
+                self.controller.stim_window.update_params()
+
+    def on_checkbox_click(self, sender, event):
+        # update stim window's params
+        if self.controller.stim_window:
+            if self.controller.running_stim:
+                confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Changing experiment paremeters will stop the currently-running stimulation. Continue?")
+            else:
+                confirmation = True
+
+            if confirmation:
+                # stop any running stim
+                self.controller.stop_stim(ignore_troubleshooting=True)
+                
+                self.controller.experiment_params[sender.Name] = int(sender.Checked)
                 self.controller.save_experiment_params()
 
                 self.controller.stim_window.update_params()
@@ -1083,6 +1127,7 @@ class ParamWindow(Form):
         # check that all of the params are valid
         exp_params_are_valid = (is_positive_number(exp_params['screen_px_width'])
                                 and is_positive_number(exp_params['screen_cm_width'])
+                                and is_positive_number(exp_params['dish_radius'])
                                 and is_positive_number(exp_params['distance'])
                                 and is_positive_number(exp_params['width'])
                                 and is_positive_number(exp_params['height'])
