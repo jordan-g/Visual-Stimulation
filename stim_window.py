@@ -829,7 +829,7 @@ class GratingStim():
         self.contrast = params['contrast']
         self.brightness = params['brightness']
         self.angle = params['angle']
-
+        
         self.velocity *= math.cos(self.angle*math.pi/180.0)
         self.velocity_init *= math.cos(self.angle*math.pi/180.0)
 
