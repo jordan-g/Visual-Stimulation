@@ -1012,9 +1012,9 @@ class OptomotorGratingStim():
         for x in range(self.texture_width):
             x_2 = (x/self.texture_width)*(2*self.stim_window.display_width)
             if x_2 >= self.merging_pos:
-                w = (0.5*math.sin((2*self.merging_pos - x_2)*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
+                w = (0.5*self.contrast*math.sin((2*self.merging_pos - x_2)*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*self.brightness*255
             else:
-                w = (0.5*math.sin(x_2*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*255
+                w = (0.5*self.contrast*math.sin(x_2*2*math.pi*self.frequency - self.phase*self.frequency*2*math.pi + self.merging_pos_deg*self.frequency*2*math.pi) + 0.5)*self.brightness*255
 
             self.grating[x, 0] = Byte(w)
             self.grating[x, 1] = Byte(w)
