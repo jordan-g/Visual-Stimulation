@@ -4,7 +4,7 @@ clr.AddReference("System.Drawing")
 
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel, ControlStyles
-from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox
+from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox, ToolTip
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
@@ -29,8 +29,13 @@ class ParamWindow(Form):
         # set controller
         self.controller = controller
 
+        self.tooltip = ToolTip()
+
         # initialize invalid params label
         self.invalid_params_label = None
+
+        # initialize total time label
+        self.total_time_label = None
 
         # set window details
         self.Text = 'Parameters'
@@ -39,6 +44,7 @@ class ParamWindow(Form):
         self.Top = 30
         self.Left = 30
         self.AutoSize = True
+        self.closing = False
 
         # create dialogs
         self.experiment_name_dialog = ExperimentNameDialog()
@@ -68,6 +74,8 @@ class ParamWindow(Form):
 
         # add save button panel
         self.add_save_button_panel()
+
+        Application.EnableVisualStyles()
 
     def add_exp_choice_panel(self):
         # add exp button panel
@@ -135,36 +143,45 @@ class ParamWindow(Form):
         self.exp_chooser.Text = self.controller.experiments['current_experiment']
         self.exp_chooser.Width = self.Width - 35
         self.exp_chooser.AutoSize = True
-        self.exp_chooser.Font = Font(BODY_FONT.FontFamily, 18)
+        self.exp_chooser.Font = BODY_FONT
 
     def on_exp_choice(self, sender, event):
-        # get new exp name
-        new_exp_name = self.exp_chooser.SelectedItem.ToString()
+        if self.controller.running_stim:
+            confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Creating a new configuration will stop the currently-running stimulation. Continue?")
+        else:
+            confirmation = True
 
-        if new_exp_name != self.controller.experiments['current_experiment']:
-            # change experiment
-            self.controller.change_experiment(new_exp_name)
+        if confirmation:
+            # stop any running stim
+            self.controller.stop_stim(ignore_troubleshooting=True)
 
-            # refresh panels
-            self.exp_param_panel.Refresh()
-            self.config_choice_panel.Refresh()
-            self.config_button_panel.Refresh()
-            self.stim_list_panel.Refresh()
+            # get new exp name
+            new_exp_name = self.exp_chooser.SelectedItem.ToString()
 
-            # re-populate exp param, config choice, config button & stim list panels
-            self.populate_exp_param_panel()
-            self.populate_config_choice_panel()
-            self.populate_config_button_panel()
-            self.populate_stim_list_panel()
+            if new_exp_name != self.controller.experiments['current_experiment']:
+                # change experiment
+                self.controller.change_experiment(new_exp_name)
 
-            # re-populate config chooser
-            self.config_chooser.Items.Clear()
-            self.config_chooser.Items.AddRange(Array[str](self.controller.configs['configs_list']))
-            self.config_chooser.Text = self.controller.configs['current_config']
+                # refresh panels
+                self.exp_param_panel.Refresh()
+                self.config_choice_panel.Refresh()
+                self.config_button_panel.Refresh()
+                self.stim_list_panel.Refresh()
 
-            # disable remove config button if there's only one config
-            if len(self.controller.configs['configs_list']) == 1:
-                self.remove_config_button.Enabled = False
+                # re-populate exp param, config choice, config button & stim list panels
+                self.populate_exp_param_panel()
+                self.populate_config_choice_panel()
+                self.populate_config_button_panel()
+                self.populate_stim_list_panel()
+
+                # re-populate config chooser
+                self.config_chooser.Items.Clear()
+                self.config_chooser.Items.AddRange(Array[str](self.controller.configs['configs_list']))
+                self.config_chooser.Text = self.controller.configs['current_config']
+
+                # disable remove config button if there's only one config
+                if len(self.controller.configs['configs_list']) == 1:
+                    self.remove_config_button.Enabled = False
 
     def add_new_experiment(self, sender, event):
         if self.controller.running_stim:
@@ -261,7 +278,7 @@ class ParamWindow(Form):
         self.exp_param_panel.Parent = self
         self.exp_param_panel.BackColor = PARAM_PANEL_COLOR
         self.exp_param_panel.Dock = DockStyle.Top
-        self.exp_param_panel.Padding = Padding(10)
+        self.exp_param_panel.Padding = Padding(5)
         self.exp_param_panel.FlowDirection = FlowDirection.LeftToRight
         self.exp_param_panel.WrapContents = True
         # self.exp_param_panel.Height = 250
@@ -272,6 +289,7 @@ class ParamWindow(Form):
         # initialize exp param textboxes, sliders & slider labels dicts
         self.exp_param_textboxes = {}
         self.exp_param_sliders   = {}
+        self.exp_param_checkboxes = {}
         self.exp_param_slider_labels = {}
 
         # empty exp param panel
@@ -284,30 +302,31 @@ class ParamWindow(Form):
         # add_heading_label("Experiment Parameters", self.exp_param_panel)
         
         # add exp params
-        self.add_exp_param_to_window('screen_cm_width', 'Screen width (cm)')
-        self.add_exp_param_to_window('screen_px_width', 'Screen width (px)')
-        self.add_exp_param_to_window('distance', 'Screen distance (cm)')
+        self.add_exp_param_to_window('screen_cm_width', 'Projection width (cm)')
+        self.add_exp_param_to_window('screen_px_width', 'Projection width (px)')
+        self.add_exp_param_checkbox_to_window('warp_perspective', 'Cylindrical projection')
+        self.add_exp_param_to_window('dish_radius', 'Dish radius (cm)')
 
         self.add_exp_param_slider_to_window('width', 'Viewport width', 1, 100)
         self.add_exp_param_slider_to_window('height', 'Viewport height', 1, 100)
 
-        # add filler subpanel
-        exp_param_subpanel = FlowLayoutPanel()
-        exp_param_subpanel.Parent = self.exp_param_panel
-        exp_param_subpanel.BackColor = PARAM_PANEL_COLOR
-        exp_param_subpanel.Dock = DockStyle.Bottom
-        exp_param_subpanel.Padding = Padding(0)
-        exp_param_subpanel.FlowDirection = FlowDirection.TopDown
-        exp_param_subpanel.WrapContents = False
-        exp_param_subpanel.Width = int(self.Width/3) - 20
-        # exp_param_subpanel.Height = 60
-        exp_param_subpanel.AutoSize = True
-        exp_param_subpanel.Font = BODY_FONT
+        # # add filler subpanel
+        # exp_param_subpanel = FlowLayoutPanel()
+        # exp_param_subpanel.Parent = self.exp_param_panel
+        # exp_param_subpanel.BackColor = PARAM_PANEL_COLOR
+        # exp_param_subpanel.Dock = DockStyle.Bottom
+        # exp_param_subpanel.Padding = Padding(0)
+        # exp_param_subpanel.FlowDirection = FlowDirection.TopDown
+        # exp_param_subpanel.WrapContents = False
+        # exp_param_subpanel.Width = int(self.Width/3) - 20
+        # exp_param_subpanel.Height = 50
+        # # exp_param_subpanel.AutoSize = True
+        # exp_param_subpanel.Font = BODY_FONT
 
         self.add_exp_param_slider_to_window('x_offset', 'Viewport x offset', 0, 100)
         self.add_exp_param_slider_to_window('y_offset', 'Viewport y offset', 0, 100)
 
-    def add_exp_param_to_window(self, name, label_text):
+    def add_exp_param_to_window(self, name, label_text, tooltip=None):
         # create exp param panel
         exp_param_subpanel = FlowLayoutPanel()
         exp_param_subpanel.Parent = self.exp_param_panel
@@ -317,12 +336,18 @@ class ParamWindow(Form):
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
         exp_param_subpanel.Width = int(self.Width/3) - 15
-        # exp_param_subpanel.Height = 60
+        exp_param_subpanel.Height = 50
         # exp_param_subpanel.AutoSize = True
         exp_param_subpanel.Font = BODY_FONT
 
         # add param label
-        add_param_label(label_text + ":", exp_param_subpanel)
+        label = Label()
+        label.Parent = exp_param_subpanel
+        label.Text = label_text + ":"
+        label.AutoSize = True
+        label.Font = BODY_FONT
+        label.Margin = Padding(0, 5, 0, 0)
+        label.Width = exp_param_subpanel.Width
 
         # add param textbox
         self.exp_param_textboxes[name] = TextBox()
@@ -330,7 +355,10 @@ class ParamWindow(Form):
         self.exp_param_textboxes[name].Text = str(self.controller.experiment_params[name])
         self.exp_param_textboxes[name].Width = int(self.Width/3) - 20
         self.exp_param_textboxes[name].BackColor = BUTTON_PANEL_COLOR
-        self.exp_param_textboxes[name].Font = Font(BODY_FONT.FontFamily, 18)
+        self.exp_param_textboxes[name].Font = BODY_FONT
+
+        if tooltip is not None:
+            self.tooltip.SetToolTip(label, tooltip)
 
     def add_exp_param_slider_to_window(self, name, label_text, min, max):
         # create exp param panel
@@ -342,7 +370,7 @@ class ParamWindow(Form):
         exp_param_subpanel.FlowDirection = FlowDirection.TopDown
         exp_param_subpanel.WrapContents = False
         exp_param_subpanel.Width = int(self.Width/3) - 15
-        # exp_param_subpanel.Height = 60
+        exp_param_subpanel.Height = 50
         # exp_param_subpanel.AutoSize = True
         exp_param_subpanel.Font = BODY_FONT
 
@@ -366,14 +394,64 @@ class ParamWindow(Form):
         self.exp_param_sliders[name].TickFrequency = 100
         self.exp_param_sliders[name].Scroll += self.on_slider_scroll
 
+    def add_exp_param_checkbox_to_window(self, name, label_text):
+        # create exp param panel
+        exp_param_subpanel = FlowLayoutPanel()
+        exp_param_subpanel.Parent = self.exp_param_panel
+        exp_param_subpanel.BackColor = PARAM_PANEL_COLOR
+        exp_param_subpanel.Dock = DockStyle.Bottom
+        exp_param_subpanel.Padding = Padding(0)
+        exp_param_subpanel.FlowDirection = FlowDirection.TopDown
+        exp_param_subpanel.WrapContents = False
+        exp_param_subpanel.Width = int(self.Width/3) - 15
+        exp_param_subpanel.Height = 50
+        # exp_param_subpanel.AutoSize = True
+        exp_param_subpanel.Font = BODY_FONT
+
+        self.exp_param_checkboxes[name] = CheckBox()
+        self.exp_param_checkboxes[name].Parent = exp_param_subpanel
+        self.exp_param_checkboxes[name].Checked = bool(self.controller.experiment_params[name])
+        self.exp_param_checkboxes[name].CheckedChanged += self.on_checkbox_click
+        self.exp_param_checkboxes[name].Text = label_text
+        self.exp_param_checkboxes[name].Width = int(self.Width/3) - 20
+        self.exp_param_checkboxes[name].Name = name
+        self.exp_param_checkboxes[name].AutoSize = True
+
     def on_slider_scroll(self, sender, event):
         self.exp_param_slider_labels[sender.Name].Text = self.exp_param_slider_labels[sender.Name].Name + ": " + str(sender.Value/100.0)
 
         # update stim window's params
         if self.controller.stim_window:
-            self.controller.experiment_params[sender.Name] = sender.Value/100.0
+            if self.controller.running_stim:
+                confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Changing experiment paremeters will stop the currently-running stimulation. Continue?")
+            else:
+                confirmation = True
 
-            self.controller.stim_window.update_params()
+            if confirmation:
+                # stop any running stim
+                self.controller.stop_stim(ignore_troubleshooting=True)
+                
+                self.controller.experiment_params[sender.Name] = sender.Value/100.0
+                self.controller.save_experiment_params()
+
+                self.controller.stim_window.update_params()
+
+    def on_checkbox_click(self, sender, event):
+        # update stim window's params
+        if self.controller.stim_window:
+            if self.controller.running_stim:
+                confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Changing experiment paremeters will stop the currently-running stimulation. Continue?")
+            else:
+                confirmation = True
+
+            if confirmation:
+                # stop any running stim
+                self.controller.stop_stim(ignore_troubleshooting=True)
+                
+                self.controller.experiment_params[sender.Name] = int(sender.Checked)
+                self.controller.save_experiment_params()
+
+                self.controller.stim_window.update_params()
 
     def add_config_choice_panel(self):
         # create config choice panel
@@ -409,21 +487,30 @@ class ParamWindow(Form):
         self.config_chooser.Text = self.controller.configs['current_config']
         self.config_chooser.Width = self.Width - 35
         self.config_chooser.AutoSize = True
-        self.config_chooser.Font = Font(BODY_FONT.FontFamily, 18)
+        self.config_chooser.Font = BODY_FONT
 
     def on_config_choice(self, sender, event):
-        # get new config name
-        new_config_name = self.config_chooser.SelectedItem.ToString()
+        if self.controller.running_stim:
+            confirmation = self.confirmation_dialog.ShowDialog(self.controller, "Stop Current Stimulation?", "Creating a new configuration will stop the currently-running stimulation. Continue?")
+        else:
+            confirmation = True
 
-        if new_config_name != self.controller.configs['current_config']:
-            # refresh panel
-            self.stim_list_panel.Refresh()
+        if confirmation:
+            # stop any running stim
+            self.controller.stop_stim(ignore_troubleshooting=True)
 
-            # change config
-            self.controller.change_config(new_config_name)
+            # get new config name
+            new_config_name = self.config_chooser.SelectedItem.ToString()
 
-            # re-populate stim list panel
-            self.populate_stim_list_panel()
+            if new_config_name != self.controller.configs['current_config']:
+                # refresh panel
+                self.stim_list_panel.Refresh()
+
+                # change config
+                self.controller.change_config(new_config_name)
+
+                # re-populate stim list panel
+                self.populate_stim_list_panel()
 
     def add_config_button_panel(self):
         # add config button panel
@@ -566,7 +653,7 @@ class ParamWindow(Form):
         self.stim_list_panel.WrapContents = False
         self.stim_list_panel.AutoScroll = True
         # self.stim_list_panel.Width = self.Width
-        self.stim_list_panel.MaximumSize = Size(0, 500)
+        self.stim_list_panel.MaximumSize = Size(0, 300)
         self.stim_list_panel.AutoSize = True
         self.stim_list_panel.Font = BODY_FONT
 
@@ -598,6 +685,9 @@ class ParamWindow(Form):
 
         # allow the param window to refresh
         self.ResumeLayout()
+
+        # update total time label
+        self.update_total_time_label()
 
     def add_stim_to_stim_list_panel(self, i):
         # create stim subpanel
@@ -641,8 +731,8 @@ class ParamWindow(Form):
         stim_name_label = Label()
         stim_name_label.Parent = subpanel
         stim_name_label.Text = self.controller.config_params['stim_list'][i]
-        stim_name_label.MinimumSize = Size(320, 40)
-        stim_name_label.MaximumSize = Size(320, 40)
+        stim_name_label.MinimumSize = Size(220, 40)
+        stim_name_label.MaximumSize = Size(220, 40)
         stim_name_label.AutoSize = True
         stim_name_label.Padding = Padding(0, 7, 0, 0)
         stim_name_label.AutoEllipsis = True
@@ -654,8 +744,8 @@ class ParamWindow(Form):
         stim_type_label = Label()
         stim_type_label.Parent = subpanel
         stim_type_label.Text = stim_type
-        stim_type_label.MinimumSize = Size(200, 40)
-        stim_type_label.MaximumSize = Size(200, 40)
+        stim_type_label.MinimumSize = Size(100, 40)
+        stim_type_label.MaximumSize = Size(100, 40)
         stim_type_label.AutoEllipsis = True
         stim_type_label.AutoSize = True
         stim_type_label.Padding = Padding(0, 7, 0, 0)
@@ -822,12 +912,17 @@ class ParamWindow(Form):
                 # allow the param window to refresh
                 self.ResumeLayout()
 
+                # update total time label
+                self.update_total_time_label()
+
     def edit_stim(self, sender, event):
         # get stim index
         stim_index = sender.Parent.Tag
 
         # show stim dialog
         success = self.stim_dialog.ShowDialog(self.controller, stim_index)
+
+        print(success)
 
         if success:
             self.controller.stop_stim(ignore_troubleshooting=True)
@@ -850,6 +945,9 @@ class ParamWindow(Form):
 
             # allow the param window to refresh
             self.ResumeLayout()
+
+            # update total time label
+            self.update_total_time_label()
 
     def add_save_button_panel(self):
         # create save button panel
@@ -904,6 +1002,16 @@ class ParamWindow(Form):
         self.troubleshooting_checkbox.Text = "Troubleshooting"
         self.troubleshooting_checkbox.AutoSize = True
 
+        # create save button panel
+        self.button_panel_2 = FlowLayoutPanel()
+        self.button_panel_2.Parent = self
+        self.button_panel_2.BackColor = BUTTON_PANEL_COLOR
+        self.button_panel_2.Dock = DockStyle.Bottom
+        self.button_panel_2.Padding = Padding(10)
+        self.button_panel_2.WrapContents = False
+        self.button_panel_2.AutoSize = True
+        self.button_panel_2.Font = BODY_FONT
+
         # add stimulation progress indicator
         self.progress_label = Label()
         self.progress_label.Parent = self.save_button_panel
@@ -911,11 +1019,12 @@ class ParamWindow(Form):
         self.progress_label.Width = 200
         self.progress_label.ForeColor = Color.Red
         self.progress_label.Padding = Padding(5)
-        # self.progress_label.AutoSize = True
+        self.progress_label.AutoSize = True
+        self.progress_label.Font = ITALIC_BODY_FONT
 
         # add display chooser label
         self.display_chooser_label = Label()
-        self.display_chooser_label.Parent = self.save_button_panel
+        self.display_chooser_label.Parent = self.button_panel_2
         self.display_chooser_label.Text = "Show stimulation on:"
         self.display_chooser_label.Padding = Padding(5)
         self.display_chooser_label.AutoSize = True
@@ -923,13 +1032,26 @@ class ParamWindow(Form):
         # add display chooser
         self.display_chooser = ComboBox()
         self.display_chooser.DropDownStyle = ComboBoxStyle.DropDownList
-        self.display_chooser.Parent = self.save_button_panel
+        self.display_chooser.Parent = self.button_panel_2
+        display_options = ["Monitor", "Projector"]
         self.display_chooser.Items.AddRange(Array[str](["Monitor", "Projector"]))
         self.display_chooser.SelectionChangeCommitted += self.on_display_choice
-        self.display_chooser.Text = "Projector"
+        self.display_chooser.SelectedItem = display_options[self.controller.display_index]
         self.display_chooser.Width = 100
         self.display_chooser.BackColor = BUTTON_PANEL_COLOR
         self.display_chooser.Font = BODY_FONT
+
+        # add total time indicator
+        self.total_time_label = Label()
+        self.total_time_label.Parent = self.button_panel_2
+        self.total_time_label.Text = "Total Time: {}s".format(sum(self.controller.config_params['durations_list']))
+        self.total_time_label.Width = 200
+        self.total_time_label.Padding = Padding(5)
+        self.total_time_label.Font = ITALIC_BODY_FONT
+
+    def update_total_time_label(self):
+        if self.total_time_label:
+            self.total_time_label.Text = "Total Time: {}s".format(sum(self.controller.config_params['durations_list']))
 
     def on_display_choice(self, sender, event):
         if self.controller.running_stim:
@@ -966,18 +1088,25 @@ class ParamWindow(Form):
                 # allow the param window to refresh
                 self.ResumeLayout()
 
-    def save_experiment_params(self, sender, event):
+                # update total time label
+                self.update_total_time_label()
+
+    def save_experiment_params(self, sender, event): #TODO: Fix this to save ALL params
         print("ParamWindow: Saving experiment params.")
 
         # get contents of param textboxes
         self.exp_param_values         = {key: value.Text for (key, value) in self.exp_param_textboxes.items()}
         self.exp_param_slider_values  = {key: value.Value/100.0 for (key, value) in self.exp_param_sliders.items()}
+        self.exp_param_checkbox_values = {key: value.Checked for (key, value) in self.exp_param_checkboxes.items()}
 
         self.exp_param_values.update(self.exp_param_slider_values)
+        self.exp_param_values.update(self.exp_param_checkbox_values)
 
         if self.are_valid_params(self.exp_param_values):
             # create new parameters dicts
             new_exp_params = {key: float(value) for (key, value) in self.exp_param_values.items()}
+
+            print(new_exp_params)
 
             if not are_experiment_params_equal(self.controller.experiment_params, new_exp_params):
                 if self.controller.running_stim:
@@ -1000,6 +1129,7 @@ class ParamWindow(Form):
                     if self.controller.stim_window:
                         self.controller.stim_window.update_params()
         else:
+            print("invalid")
             # the params are invalid; add invalid params text
             self.add_invalid_params_text()
 
@@ -1017,7 +1147,8 @@ class ParamWindow(Form):
         # check that all of the params are valid
         exp_params_are_valid = (is_positive_number(exp_params['screen_px_width'])
                                 and is_positive_number(exp_params['screen_cm_width'])
-                                and is_positive_number(exp_params['distance'])
+                                and is_positive_number(exp_params['dish_radius'])
+                                # and is_positive_number(exp_params['distance'])
                                 and is_positive_number(exp_params['width'])
                                 and is_positive_number(exp_params['height'])
                                 and is_nonnegative_number(exp_params['x_offset'])
@@ -1046,7 +1177,7 @@ class ParamWindow(Form):
     def run(self):
         Application.Run(self)
 
-    def Close(self):
+    def OnFormClosing(self, e):
         print("ParamWindow: Closing.")
 
         self.experiment_name_dialog = None
@@ -1056,4 +1187,8 @@ class ParamWindow(Form):
         # save experiment params
         self.save_experiment_params(self, None)
 
-        super(ParamWindow, self).Close()
+        self.controller.save_experiments()
+        self.controller.save_configs()
+        self.controller.save_config_params()
+
+        self.controller.close_windows()

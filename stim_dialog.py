@@ -4,7 +4,7 @@ clr.AddReference("System.Drawing")
 
 from System import Array
 from System.Windows.Forms import Application, Form, Panel, TableLayoutPanel, FlowLayoutPanel
-from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar
+from System.Windows.Forms import Button, Label, Control, ComboBox, TextBox, TrackBar, CheckBox
 from System.Windows.Forms import AnchorStyles, DockStyle, FlowDirection, BorderStyle, ComboBoxStyle, Padding, FormBorderStyle, FormStartPosition, DialogResult
 from System.Drawing import Color, Size, Font, FontStyle, Icon, SystemFonts, FontFamily, ContentAlignment
 
@@ -49,8 +49,8 @@ class StimDialog():
         else:
             # we are creating a new stim; make new stim params
             self.i = len(self.controller.config_params['stim_list'])
-            self.stim_name = "Stim {0}".format(self.i + 1)
             self.stim_type = 'Looming Dot'
+            self.stim_name = self.stim_type
             self.stim_duration = self.controller.default_stim_duration()
             self.stim_parameters = self.controller.default_stim_params(self.stim_type)
 
@@ -116,12 +116,12 @@ class StimDialog():
         self.stim_chooser = ComboBox()
         self.stim_chooser.DropDownStyle = ComboBoxStyle.DropDownList
         self.stim_chooser.Parent = self.stim_choice_panel
-        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Grating", "Delay", "Black Flash", "White Flash"))
+        self.stim_chooser.Items.AddRange(("Looming Dot", "Moving Dot", "Combined Dots", "Optomotor Grating", "Grating", "Broadband Grating", "Delay", "Black Flash", "White Flash"))  ##!! need to add option for OKR here
         self.stim_chooser.SelectionChangeCommitted += self.on_stim_choice
         self.stim_chooser.Text = self.stim_type
         self.stim_chooser.Width = self.dialog_window.Width - 40
         self.stim_chooser.AutoSize = True
-        self.stim_chooser.Font = Font(BODY_FONT.FontFamily, 18)
+        self.stim_chooser.Font = BODY_FONT
 
     def add_stim_param_panel(self):
         # create stim param panel
@@ -146,6 +146,7 @@ class StimDialog():
         
         # initialize stim param text controls dict
         self.stim_param_textboxes = {}
+        self.stim_param_checkboxes = {}
 
         # add name label & textbox
         add_param_label('Name:', self.stim_param_panel)
@@ -155,7 +156,7 @@ class StimDialog():
         self.name_textbox.AutoSize = True
         self.name_textbox.Width = 300
         self.name_textbox.BackColor = BUTTON_PANEL_COLOR
-        self.name_textbox.Font = Font(BODY_FONT.FontFamily, 18)
+        self.name_textbox.Font = BODY_FONT
 
         # add duration label & textbox
         add_param_label('Duration (s):', self.stim_param_panel)
@@ -165,7 +166,7 @@ class StimDialog():
         self.duration_textbox.AutoSize = True
         self.duration_textbox.Width = 300
         self.duration_textbox.BackColor = BUTTON_PANEL_COLOR
-        self.duration_textbox.Font = Font(BODY_FONT.FontFamily, 18)
+        self.duration_textbox.Font = BODY_FONT
 
         # add parameters heading label
         if self.stim_type not in ("Delay", "Black Flash", "White Flash"):
@@ -178,6 +179,9 @@ class StimDialog():
             self.add_stim_param_to_window('l_v', 'l/v (ms)')
             self.add_stim_param_to_window('looming_dot_brightness', 'Dot brightness (0 - 1)') #Will need to change to brightness ie moving dot
             self.add_stim_param_to_window('background_brightness', 'Background brightness (0 - 1)')     #here is the background_brightness problem
+            self.add_stim_param_checkbox_to_window('checkered', 'Checkerboard pattern?')     #here is the background_brightness problem
+            self.add_stim_param_to_window('num_squares', 'Number of squares in the checkerboard pattern')     #here is the background_brightness problem
+            self.add_stim_param_checkbox_to_window('expand_checkered_pattern', 'Expanding checkerboard pattern?')     #here is the background_brightness problem
 ##            self.add_stim_param_to_window('background', ' Background (0-1)')##Will add option to change background
         elif self.stim_type == "Moving Dot":
             self.add_stim_param_to_window('radius', 'Radius (px)')
@@ -203,14 +207,24 @@ class StimDialog():
             self.add_stim_param_to_window('v_y', 'Vertical velocity (deg/s)')
             self.add_stim_param_to_window('moving_dot_brightness', 'Contrast (0 - 1)')
             self.add_stim_param_to_window('background_brightness', 'Background brightness (0-1)')
-        elif self.stim_type == "Grating":
+        elif self.stim_type == "Optomotor Grating":
+            self.add_stim_param_to_window('frequency', 'Spatial frequency (1/deg)')
+            self.add_stim_param_to_window('merging_pos', 'Converging position (x)')#will need to do something to get x
+            self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
+            self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
+            self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
+            self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
+            self.add_stim_param_to_window('angle', 'Angle')
+        elif self.stim_type in ["Grating", "Broadband Grating"]:
             self.add_stim_param_to_window('frequency', 'Spatial frequency (1/deg)')
             self.add_stim_param_to_window('init_phase', 'Initial phase (deg)')
             self.add_stim_param_to_window('velocity', 'Velocity (deg/s)')
             self.add_stim_param_to_window('contrast', 'Contrast (0 - 1)')
             self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
             self.add_stim_param_to_window('angle', 'Angle')
-        elif self.stim_type in ("Delay", "Black Flash", "White Flash"):
+        elif self.stim_type == "White Flash":
+            self.add_stim_param_to_window('brightness', 'Brightness (0 - 1)')
+        elif self.stim_type in ("Delay", "Black Flash"):
             pass
 
     def add_stim_param_to_window(self, name, label_text):
@@ -222,9 +236,23 @@ class StimDialog():
         self.stim_param_textboxes[name].Parent = self.stim_param_panel
         self.stim_param_textboxes[name].Text = str(self.stim_parameters[name])
         self.stim_param_textboxes[name].AutoSize = True
-        self.stim_param_textboxes[name].Width = 300
+        self.stim_param_textboxes[name].Width = 360
         self.stim_param_textboxes[name].BackColor = TEXTBOX_COLOR
-        self.stim_param_textboxes[name].Font = Font(BODY_FONT.FontFamily, 18)
+        self.stim_param_textboxes[name].Font = BODY_FONT
+
+    def add_stim_param_checkbox_to_window(self, name, label_text):
+        # add param label
+        add_param_label(label_text + ':', self.stim_param_panel)
+
+        # add param textbox
+        self.stim_param_checkboxes[name] = CheckBox()
+        self.stim_param_checkboxes[name].Parent = self.stim_param_panel
+        self.stim_param_checkboxes[name].Text = ""
+        self.stim_param_checkboxes[name].Checked = self.stim_parameters[name]
+        self.stim_param_checkboxes[name].AutoSize = True
+        self.stim_param_checkboxes[name].Width = 360
+        self.stim_param_checkboxes[name].BackColor = TEXTBOX_COLOR
+        self.stim_param_checkboxes[name].Font = BODY_FONT
 
     def on_stim_choice(self, sender, event):
         # stop the dialog window from refreshing
@@ -232,7 +260,8 @@ class StimDialog():
 
         # save a copy of the current stim params for the currently selected stim type
         self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
-        self.saved_stim_parameters[self.stim_type] = {key: float(value) for (key, value) in self.stim_param_textbox_values.items()}
+        self.stim_param_checkbox_values = {key: value.Checked for (key, value) in self.stim_param_checkboxes.items()}
+        self.saved_stim_parameters[self.stim_type] = dict({key: float(value) for (key, value) in self.stim_param_textbox_values.items()}.items() + {key: bool(value) for (key, value) in self.stim_param_checkbox_values.items()}.items())
 
         # get selected stim type
         new_stim_type = self.stim_chooser.SelectedItem.ToString()
@@ -240,6 +269,7 @@ class StimDialog():
         if new_stim_type != self.stim_type:
             # update stim type
             self.stim_type = new_stim_type
+            self.stim_name = new_stim_type
 
             if new_stim_type in self.saved_stim_parameters:
                 # we have previously set parameters for this stim type; restore these
@@ -255,6 +285,8 @@ class StimDialog():
 
             # populate stim param panel
             self.populate_stim_param_panel()
+
+            self.name_textbox.Text = self.stim_name
 
         # allow the dialog window to refresh
         self.dialog_window.ResumeLayout()
@@ -309,6 +341,7 @@ class StimDialog():
 
         # get contents of param textboxes
         self.stim_param_textbox_values = {key: value.Text for (key, value) in self.stim_param_textboxes.items()}
+        self.stim_param_checkbox_values = {key: value.Checked for (key, value) in self.stim_param_checkboxes.items()}
         name = self.name_textbox.Text
         duration = self.duration_textbox.Text
         type = self.stim_chooser.SelectedItem.ToString()
@@ -320,7 +353,7 @@ class StimDialog():
             self.remove_invalid_params_text()
             
             # create new parameters dicts
-            new_stim_params = {key: float(value) for (key, value) in self.stim_param_textbox_values.items()}
+            new_stim_params = dict({key: float(value) for (key, value) in self.stim_param_textbox_values.items()}.items() + {key: bool(value) for (key, value) in self.stim_param_checkbox_values.items()}.items())
 
             # update config params
             self.controller.config_params['stim_list'][self.i] = name
@@ -359,24 +392,35 @@ class StimDialog():
                                      and is_number_between_0_and_1(stim_params['moving_dot_brightness'])
                                      and is_number_between_0_and_1(stim_params['background_brightness']))
         elif stim_type == "Combined Dots":
-            stim_params_are_valid = (is_nonnegative_number(stim_params['radius'])## moving dot from here
+            stim_params_are_valid = (is_nonnegative_number(stim_params['radius'])
                                      and is_number(stim_params['moving_dot_init_x_pos'])
                                      and is_number(stim_params['moving_dot_init_y_pos'])
                                      and is_number(stim_params['v_x'])
                                      and is_number(stim_params['v_y'])
-                                     and is_number_between_0_and_1(stim_params['moving_dot_brightness']) ## moving dot to here
-                                     and is_number(stim_params['looming_dot_init_x_pos']) ## Looming dot from here
+                                     and is_number_between_0_and_1(stim_params['moving_dot_brightness']) 
+                                     and is_number(stim_params['looming_dot_init_x_pos']) 
                                      and is_number(stim_params['looming_dot_init_y_pos'])
                                      and is_positive_number(stim_params['l_v'])
                                      and is_number_between_0_and_1(stim_params['looming_dot_brightness'])
-                                     and is_number_between_0_and_1(stim_params['background_brightness']))  ## Loming dot to here                                     
-        elif stim_type == "Grating":
+                                     and is_number_between_0_and_1(stim_params['background_brightness']))                                    
+        elif stim_type == "Optomotor Grating":
+            stim_params_are_valid = (is_positive_number(stim_params['frequency'])
+                                     and is_nonnegative_number(stim_params['merging_pos'])
+                                     and is_number(stim_params['init_phase'])
+                                     and is_number(stim_params['velocity'])
+                                     and is_number_between_0_and_1(stim_params['contrast'])
+                                     and is_number_between_0_and_1(stim_params['brightness'])
+                                     and is_number(stim_params['angle']))
+        elif stim_type in ["Grating", "Broadband Grating"]:
             stim_params_are_valid = (is_positive_number(stim_params['frequency'])
                                      and is_number(stim_params['init_phase'])
                                      and is_number(stim_params['velocity'])
                                      and is_number_between_0_and_1(stim_params['contrast'])
+                                     and is_number_between_0_and_1(stim_params['brightness'])
                                      and is_number(stim_params['angle']))
-        elif stim_type in ("Delay", "Black Flash", "White Flash"):
+        elif stim_type == "White Flash":
+            stim_params_are_valid = is_number_between_0_and_1(stim_params['brightness'])
+        elif stim_type in ("Delay", "Black Flash"):
             stim_params_are_valid = True
 
         return stim_params_are_valid

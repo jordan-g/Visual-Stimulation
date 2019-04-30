@@ -1,5 +1,6 @@
 from param_window import ParamWindow
 from stim_window import StimWindow
+from black_projector_window import BlackProjectorWindow
 
 import threading
 import os
@@ -7,6 +8,11 @@ import shutil
 import datetime
 import time
 import json
+
+from OpenTK import *
+from OpenTK.Graphics import *
+from OpenTK.Graphics.OpenGL import *
+from OpenTK.Input import *
 
 from shared import *
 
@@ -43,6 +49,21 @@ class StimController():
         # initialize param & stim windows
         self.param_window = None
         self.stim_window  = None
+
+        self.black_projector_window = None
+        self.black_projector_thread = None
+
+        # try to use a second display (projector)
+        display = DisplayDevice.GetDisplay(DisplayIndex.Second)
+
+        if display is not None:
+            # start threads for param & stim windows
+            self.black_projector_thread = threading.Thread(target=self.create_black_projector_window)
+            self.black_projector_thread.start()
+
+            time.sleep(1)
+        else:
+            self.display_index = 0
 
         # start threads for param & stim windows
         self.param_thread = threading.Thread(target=self.create_param_window)
@@ -166,6 +187,8 @@ class StimController():
         self.experiment_params['screen_cm_width'] = new_params['screen_cm_width']
         self.experiment_params['screen_px_width'] = new_params['screen_px_width']
         self.experiment_params['distance']        = new_params['distance']
+        self.experiment_params['dish_radius']     = new_params['dish_radius']
+        self.experiment_params['warp_perspective'] = new_params['warp_perspective']
         self.experiment_params['width']           = new_params['width']
         self.experiment_params['height']          = new_params['height']
         self.experiment_params['x_offset']        = new_params['x_offset']
@@ -205,7 +228,7 @@ class StimController():
 
             for i, params in enumerate(self.config_params['parameters_list']):
                 stim_type = self.config_params['types_list'][i]
-                self.config_params['parameters_list'][i] = self.default_stim_params(stim_type)
+                self.config_params['parameters_list'][i] = self.default_stim_params(stim_type).copy()
                 for key in params:
                     try:
                         self.config_params['parameters_list'][i][key] = float(params[key])
@@ -236,33 +259,24 @@ class StimController():
         # run param window
         self.param_window.run()
 
-        print("Controller: Finished running param window.")
-
-        self.param_window = None
-
-        self.close_windows()
-
     def create_stim_window(self):
         print("Controller: Creating stim window.")
 
-        self.stim_window = StimWindow(self)
+        self.stim_window = StimWindow(self, display_index=self.display_index)
+
+        # run stim window @ 60fps
+        self.stim_window.Run(60)
+
+    def create_black_projector_window(self):
+        print("Controller: Creating black projector window.")
+
+        self.black_projector_window = BlackProjectorWindow(self)
 
         # run stim window @ 60fps
         try:
-            self.stim_window.Run(60)
+            self.black_projector_window.Run(60)
         except:
             pass
-
-        # if self.stim_window is not None:
-        # self.stim_window.stim = None
-
-        # self.stim_window.Dispose()
-
-        # print("Controller: Finished running stim window.")
-
-        # self.stim_window = None
-
-        # self.close_windows()
 
     def start_stim(self, ignore_troubleshooting=False):
         if ignore_troubleshooting or not self.troubleshooting:
@@ -460,6 +474,8 @@ class StimController():
             stim_parameters = DEFAULT_MOVING_DOT_PARAMS
         elif stim_type == "Combined Dots":
             stim_parameters = DEFAULT_COMBINED_DOTS_PARAMS
+        elif stim_type == "Optomotor Grating":
+            stim_parameters = DEFAULT_OPTOMOTOR_GRATING_PARAMS
         # elif stim_type == "Multiple Moving Dots":     ##Should give initial params?
         #   stim_parameters = {'dot_params': [{'radius': 10.0,     ##moving dot from here
         #                                           'moving_dot_init_x_pos': 0.0,
@@ -477,13 +493,20 @@ class StimController():
         #                                           'moving_dot_brightness': 1.0}]} ## moving dot to here
         elif stim_type == "Grating":
             stim_parameters = DEFAULT_GRATING_PARAMS
-        elif stim_type in ("Delay", "Black Flash", "White Flash"):
+        elif stim_type == "Broadband Grating":
+            stim_parameters = DEFAULT_BROADBAND_GRATING_PARAMS
+        elif stim_type == "White Flash":
+            stim_parameters = DEFAULT_WHITE_FLASH_PARAMS
+        elif stim_type in ("Delay", "Black Flash"):
             stim_parameters = {}
 
         return stim_parameters
 
     def default_stim_duration(self):
         return DEFAULT_STIM_DURATION
+
+    def current_stim_state(self):
+        return self.stim_window.current_stim_state()
 
     def toggle_troubleshooting(self, sender=None, event=None):
         self.troubleshooting = not self.troubleshooting
@@ -494,36 +517,57 @@ class StimController():
             print("Troubleshooting mode disabled.")
 
     def restart_stim_window(self, display_index):
-        self.display_index = display_index
+        if display_index != self.display_index:
+            self.display_index = display_index
 
-        print(self.display_index)
+            if self.stim_window:
+                self.stim_window.Dispose()
 
-        if self.stim_window:
-            self.stim_window.Dispose()
+            self.stim_window = None
 
-        self.stim_window = None
+            self.stim_thread.join()
 
-        self.stim_thread.join()
+            if self.display_index == 1:
+                # try to use a second display (projector)
+                display = DisplayDevice.GetDisplay(DisplayIndex.Second)
 
-        # start thread for stim window
-        self.stim_thread  = threading.Thread(target=self.create_stim_window)
-        self.stim_thread.start()
+                if display is not None:
+                    # start threads for param & stim windows
+                    self.black_projector_thread = threading.Thread(target=self.create_black_projector_window)
+                    self.black_projector_thread.start()
+
+                    time.sleep(1)
+                else:
+                    self.display_index = 0
+                    self.param_window.display_chooser.SelectedItem = "Monitor"
+
+            # start thread for stim window
+            self.stim_thread = threading.Thread(target=self.create_stim_window)
+            self.stim_thread.start()
 
     def close_windows(self):
         print("Controller: Closing windows.")
 
         # close param & stim windows
-        if self.param_window:
-            self.param_window.Close()
         if self.stim_window:
             self.stim_window.Exit()
 
-        # close the threads
-        try:
-            self.param_thread.join()
+        if self.black_projector_window:
+            self.black_projector_window.Exit()
+
+        if self.stim_thread:
+            # close the threads
             self.stim_thread.join()
-        except:
-            pass
+
+        if self.black_projector_thread:
+            self.black_projector_thread.join()
+
+        self.stim_window            = None
+        self.param_window           = None
+        self.black_projector_window = None
+        self.param_thread           = None
+        self.stim_thread            = None
+        self.black_projector_thread = None
 
         print("Controller: Closed all threads.")
 
@@ -541,7 +585,7 @@ class Timer(threading.Thread):
             curr_time = time.time() - self.stim_start_time
             minutes   = int(curr_time // 60)
             seconds   = int(curr_time % 60)
-            stim_name = self.controller.stim_window.stim_type
+            stim_name = self.controller.stim_window.stim_name
             self.progress_label.Text = "{0:02d}:{1:02d} - {2}".format(minutes, seconds, stim_name)
 
 # --- HELPER FUNCTIONS --- #

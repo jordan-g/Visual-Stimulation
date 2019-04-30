@@ -34,7 +34,7 @@ class ExperimentNameDialog():
         self.dialog_window = Form()
         self.dialog_window.AutoSize = True
         self.dialog_window.Width = 400
-        self.dialog_window.MaximumSize = Size(400, 220)
+        self.dialog_window.MaximumSize = Size(400, 160)
         self.dialog_window.StartPosition = FormStartPosition.CenterScreen
         self.dialog_window.Text = title
         self.dialog_window.FormBorderStyle = FormBorderStyle.FixedSingle
@@ -65,7 +65,7 @@ class ExperimentNameDialog():
         self.exp_name_box.Width = self.panel.Width - 30
         self.exp_name_box.AutoSize = True
         self.exp_name_box.BackColor = BUTTON_PANEL_COLOR
-        self.exp_name_box.Font = Font(BODY_FONT.FontFamily, 18)
+        self.exp_name_box.Font = Font(BODY_FONT.FontFamily, 9)
 
         # add save button panel
         self.add_save_button_panel()
@@ -162,7 +162,7 @@ class ConfigNameDialog():
         self.dialog_window.Width = 400
         self.dialog_window.StartPosition = FormStartPosition.CenterScreen
         self.dialog_window.Text = title
-        self.dialog_window.MaximumSize = Size(400, 220)
+        self.dialog_window.MaximumSize = Size(400, 160)
         self.dialog_window.FormBorderStyle = FormBorderStyle.FixedSingle
 
         # create the main panel
@@ -191,7 +191,7 @@ class ConfigNameDialog():
         self.config_name_box.Width = self.dialog_window.Width - 30
         self.config_name_box.AutoSize = True
         self.config_name_box.BackColor = BUTTON_PANEL_COLOR
-        self.config_name_box.Font = Font(BODY_FONT.FontFamily, 18)
+        self.config_name_box.Font = Font(BODY_FONT.FontFamily, 9)
 
         # add save button panel
         self.add_save_button_panel()

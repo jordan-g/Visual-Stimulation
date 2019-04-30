@@ -4,9 +4,9 @@ int pulsePin = 13; // pin for sending pulses
 
 // TTL parameters
 int pulseDelay = 500;
-int pulseFrequency = 5;
-int pulseWidth = 5;
-int pulseDuration = 5;
+int pulseFrequency = 20;
+int pulseWidth = 50;
+int pulseDuration = 15;
 int pulseNumber = (int) pulseDuration*pulseFrequency;
 int pulseOffset = (int) 1000/pulseFrequency;
 
